@@ -1,0 +1,49 @@
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+venv/
+.venv/
+env/
+
+# ---------- 数据库（用 init_db.py 生成，不入库） ----------
+mock.db
+*.db
+*.sqlite
+*.sqlite3
+
+# ---------- 密钥与证书（绝对不要提交） ----------
+.cloudflared/
+cert.pem
+*.pem
+*.key
+*.json.tmpl
+.tunnel_id
+.env
+.env.*
+secrets.*
+config.local.*
+*.log
+
+# ---------- 二进制与工具 ----------
+tools/
+*.exe
+*.zip
+*.7z
+*.rar
+
+# ---------- 本机环境相关脚本（路径/令牌因机器而异） ----------
+start_all.ps1
+start_server.ps1
+run_backend.bat
+run_tunnel.bat
+zzu-autostart.vbs
+
+# ---------- 编辑器 / 系统 ----------
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini

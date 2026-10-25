@@ -1,0 +1,27 @@
+<view class="container">
+  <view class="header">
+    <view class="title">{{departmentName}}</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="tip">加载中...</view>
+
+  <view wx:elif="{{error}}" class="card">
+    <view class="err">{{error}}</view>
+    <view class="btn" bindtap="load">重试</view>
+  </view>
+
+  <view wx:else>
+    <view class="card dept" wx:for="{{doctors}}" wx:key="id"
+          data-id="{{item.id}}" data-name="{{item.name}}" bindtap="goSchedules">
+      <view class="dept-main">
+        <view class="row">
+          <view class="title">{{item.name}}</view>
+          <view class="tag">{{item.title}}</view>
+        </view>
+        <view class="sub">擅长：{{item.specialty}}</view>
+      </view>
+      <view class="arrow">›</view>
+    </view>
+    <view wx:if="{{!doctors.length}}" class="tip">该科室暂无医生</view>
+  </view>
+</view>

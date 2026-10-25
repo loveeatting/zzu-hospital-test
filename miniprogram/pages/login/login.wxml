@@ -1,0 +1,27 @@
+<view class="login-page">
+  <view class="hero">
+    <view class="hero-logo">校医院</view>
+    <view class="hero-title">郑州大学校医院</view>
+    <view class="hero-sub">门诊预约挂号系统</view>
+  </view>
+
+  <view class="login-card">
+    <view class="label">学号</view>
+    <input class="input" placeholder="请输入学号" value="{{studentNo}}" bindinput="onStudentNo" maxlength="20" />
+
+    <view class="label">密码</view>
+    <input class="input" password placeholder="请输入密码" value="{{password}}" bindinput="onPassword" maxlength="32" />
+
+    <view class="btn {{loading ? 'gray' : ''}}" bindtap="submit">
+      {{loading ? '登录中...' : '登 录'}}
+    </view>
+
+    <view wx:if="{{error}}" class="err">{{error}}</view>
+
+    <view class="demo" bindtap="fillDemo">
+      演示账号：2025010001 / zzu123456（点我自动填入）
+    </view>
+  </view>
+
+  <view class="footer">账号信息与学校身份系统一致（当前为演示数据）</view>
+</view>

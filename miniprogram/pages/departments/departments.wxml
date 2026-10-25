@@ -1,0 +1,39 @@
+<view class="container">
+  <view class="header">
+    <view>
+      <view class="title">郑州大学校医院</view>
+      <view class="sub" wx:if="{{student}}">你好，{{student.name}}（{{student.student_no}}）</view>
+    </view>
+    <view class="link" bindtap="goMy">我的预约 ></view>
+  </view>
+
+  <view class="card dept" bindtap="goTriage">
+    <view class="dept-avatar" style="background: #8e44ad">诊</view>
+    <view class="dept-main">
+      <view class="title">智能分诊</view>
+      <view class="sub">不知道挂哪个科？描述症状，帮你推荐</view>
+    </view>
+    <view class="arrow">›</view>
+  </view>
+  <view class="notice">温馨提示：请提前 15 分钟到院取号，携带校园卡或身份证。</view>
+
+  <view wx:if="{{loading}}" class="tip">加载中...</view>
+
+  <view wx:elif="{{error}}" class="card">
+    <view class="err">{{error}}</view>
+    <view class="sub">请确认后端已启动：uvicorn main:app</view>
+    <view class="btn" bindtap="load">重试</view>
+  </view>
+
+  <view wx:else>
+    <view class="card dept" wx:for="{{departments}}" wx:key="id"
+          data-id="{{item.id}}" data-name="{{item.name}}" bindtap="goDoctors">
+      <view class="dept-avatar" style="background: {{item.color}}">{{item.initial}}</view>
+      <view class="dept-main">
+        <view class="title">{{item.name}}</view>
+        <view class="sub">{{item.location}}</view>
+      </view>
+      <view class="arrow">›</view>
+    </view>
+  </view>
+</view>

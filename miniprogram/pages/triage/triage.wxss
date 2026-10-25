@@ -1,0 +1,66 @@
+.textarea {
+  width: 100%;
+  min-height: 180rpx;
+  background: #f5f6fa;
+  border-radius: 12rpx;
+  padding: 22rpx;
+  margin-top: 18rpx;
+  font-size: 28rpx;
+  line-height: 1.7;
+  box-sizing: border-box;
+}
+.count {
+  text-align: right;
+  font-size: 22rpx;
+  color: #aaa;
+  margin-top: 8rpx;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 18rpx;
+}
+.chip {
+  background: #eef3fd;
+  color: #1a73e8;
+  font-size: 24rpx;
+  border-radius: 24rpx;
+  padding: 10rpx 20rpx;
+  margin: 0 14rpx 14rpx 0;
+}
+.result-dept {
+  font-size: 52rpx;
+  font-weight: 700;
+  color: #1a73e8;
+  margin: 18rpx 0 8rpx;
+}
+.advice {
+  background: #f7f9fc;
+  border-left: 6rpx solid #1a73e8;
+  border-radius: 8rpx;
+  padding: 18rpx 20rpx;
+  margin: 18rpx 0;
+  font-size: 26rpx;
+  color: #444;
+  line-height: 1.7;
+}
+.tag.red {
+  background: #fdecea;
+  color: #d93025;
+}
+.btn.ghost {
+  background: #fff;
+  color: #1a73e8;
+  border: 1rpx solid #c9dcf7;
+}
+.source {
+  font-size: 22rpx;
+  color: #aaa;
+}
+.disclaimer {
+  margin-top: 30rpx;
+  font-size: 22rpx;
+  color: #999;
+  line-height: 1.7;
+  padding: 0 8rpx;
+}

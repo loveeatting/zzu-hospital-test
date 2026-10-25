@@ -1,0 +1,31 @@
+<view class="container">
+  <view class="card">
+    <view class="row">
+      <view class="title">{{student.name}}</view>
+      <view class="tag">{{student.student_no}}</view>
+    </view>
+    <view class="sub">{{student.major}}</view>
+    <view class="sub">手机：{{student.phone || '未填写'}}</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="tip">加载中...</view>
+  <view wx:elif="{{error}}" class="card"><view class="err">{{error}}</view></view>
+
+  <view wx:elif="{{!list.length}}" class="tip">还没有预约记录，去首页挑个科室吧</view>
+
+  <view wx:for="{{list}}" wx:key="id" class="card">
+    <view class="row">
+      <view class="title">{{item.doctor_name}} · {{item.department_name}}</view>
+      <view class="{{item.status === 'BOOKED' ? 'tag' : 'tag gray'}}">
+        {{item.status === 'BOOKED' ? '已预约' : '已取消'}}
+      </view>
+    </view>
+    <view class="sub">{{item.date}}  {{item.period}}  {{item.start_time}}-{{item.end_time}}</view>
+    <view class="sub">{{item.room}} · 预约号 {{item.id}}</view>
+    <view wx:if="{{item.status === 'BOOKED'}}" class="cancel" data-id="{{item.id}}" bindtap="cancel">
+      取消预约
+    </view>
+  </view>
+
+  <view class="btn logout" bindtap="logout">退出登录</view>
+</view>

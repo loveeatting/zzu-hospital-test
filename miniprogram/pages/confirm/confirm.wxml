@@ -1,0 +1,39 @@
+<view class="container">
+  <view class="card">
+    <view class="row">
+      <view class="title">{{doctorName}}</view>
+      <view class="tag">预约</view>
+    </view>
+    <view class="sub">{{date}}  {{period}}  {{time}}</view>
+    <view class="sub">{{room}}</view>
+  </view>
+
+  <view class="card">
+    <view class="row">
+      <view class="title">就诊人</view>
+      <view class="tag">已实名</view>
+    </view>
+    <view class="sub">姓名：{{student.name}}</view>
+    <view class="sub">学号：{{student.student_no}}</view>
+    <view class="sub">手机：{{student.phone || '未填写'}}</view>
+    <view class="sub">院系：{{student.major}}</view>
+    <view class="btn {{submitting || result ? 'gray' : ''}}" bindtap="submit">
+      {{submitting ? '提交中...' : (result ? '已预约成功' : '确认预约')}}
+    </view>
+  </view>
+
+  <view class="notice">就诊提示：请于就诊时段前 15 分钟到达诊室，出示预约号；如需取消请在"我的预约"中操作，号源会立即释放给其他同学。</view>
+
+  <view wx:if="{{error}}" class="card">
+    <view class="err">{{error}}</view>
+    <view class="btn" bindtap="goBack">换一个时段</view>
+  </view>
+
+  <view wx:if="{{result}}" class="card">
+    <view class="title">预约成功</view>
+    <view class="sub">预约号：{{result.appointment_id}}</view>
+    <view class="sub">就诊人：{{result.patient_name}}</view>
+    <view class="sub">该时段剩余：{{result.remain}}</view>
+    <view class="btn" bindtap="goMy">查看我的预约</view>
+  </view>
+</view>

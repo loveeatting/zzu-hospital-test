@@ -1,0 +1,25 @@
+.date-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1a73e8;
+  margin-bottom: 8rpx;
+}
+.slot {
+  border-top: 1rpx solid #f0f0f0;
+  padding: 22rpx 0;
+}
+.slot:last-child { padding-bottom: 0; }
+.slot-time { font-size: 30rpx; }
+.bar {
+  height: 8rpx;
+  background: #eef0f3;
+  border-radius: 4rpx;
+  margin-top: 14rpx;
+  overflow: hidden;
+}
+.bar-in {
+  height: 100%;
+  background: #1a73e8;
+  border-radius: 4rpx;
+}
+.bar-in.low { background: #f2a13c; }

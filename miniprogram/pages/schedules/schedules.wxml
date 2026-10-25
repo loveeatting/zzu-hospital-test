@@ -1,0 +1,34 @@
+<view class="container">
+  <view class="header">
+    <view class="title">{{doctorName}}</view>
+    <view class="link">未来 7 天</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="tip">加载中...</view>
+
+  <view wx:elif="{{error}}" class="card">
+    <view class="err">{{error}}</view>
+    <view class="btn" bindtap="load">重试</view>
+  </view>
+
+  <view wx:else>
+    <view class="card" wx:for="{{groups}}" wx:key="date">
+      <view class="date-title">{{item.label}}</view>
+      <view class="slot" wx:for="{{item.items}}" wx:for-item="s" wx:key="id"
+            data-id="{{s.id}}" data-date="{{s.date}}" data-period="{{s.period}}"
+            data-time="{{s.start_time}}-{{s.end_time}}" data-room="{{s.room}}"
+            data-remain="{{s.remain}}" bindtap="choose">
+        <view class="row">
+          <view class="slot-time">{{s.period}}  {{s.start_time}}-{{s.end_time}}</view>
+          <view class="{{s.remain > 0 ? 'tag' : 'tag gray'}}">
+            {{s.remain > 0 ? '剩余 ' + s.remain + '/' + s.capacity : '已满'}}
+          </view>
+        </view>
+        <view class="bar">
+          <view class="bar-in {{s.pct <= 20 ? 'low' : ''}}" style="width: {{s.pct}}%"></view>
+        </view>
+        <view class="sub">{{s.room}}</view>
+      </view>
+    </view>
+  </view>
+</view>

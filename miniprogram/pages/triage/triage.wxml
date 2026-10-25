@@ -1,0 +1,49 @@
+<view class="container">
+  <view class="card">
+    <view class="title">说说哪里不舒服</view>
+    <view class="sub">描述越具体，推荐越准（症状、持续多久、什么时候加重）</view>
+    <textarea class="textarea" placeholder="例如：发烧两天，咳嗽有痰，嗓子疼，晚上更明显" value="{{text}}" bindinput="onText" maxlength="300" auto-height />
+    <view class="count">{{text.length}}/300</view>
+
+    <view class="chips">
+      <view class="chip" wx:for="{{examples}}" wx:key="*this" data-t="{{item}}" bindtap="useExample">
+        {{item}}
+      </view>
+    </view>
+
+    <view class="btn {{loading ? 'gray' : ''}}" bindtap="submit">
+      {{loading ? '分析中...' : '帮我推荐科室'}}
+    </view>
+  </view>
+
+  <view wx:if="{{error}}" class="card">
+    <view class="err">{{error}}</view>
+    <view class="btn" bindtap="submit">重试</view>
+  </view>
+
+  <view wx:if="{{result}}" class="card">
+    <view class="row">
+      <view class="title">推荐科室</view>
+      <view class="{{result.urgency === '紧急' ? 'tag red' : 'tag'}}">{{result.urgency}}</view>
+    </view>
+
+    <view class="result-dept">{{result.department_name || '建议咨询导诊台'}}</view>
+
+    <view class="sub">把握程度：{{result.confidence}}</view>
+    <view class="sub" wx:if="{{result.matched.length}}">识别到的症状：{{result.matched}}</view>
+    <view class="advice">{{result.advice}}</view>
+
+    <view class="row">
+      <view class="source">{{result.source === 'ai' ? 'AI 分析' : '规则匹配'}}</view>
+    </view>
+
+    <view wx:if="{{result.department_id}}">
+      <view class="btn" bindtap="goDept">去挂 {{result.department_name}}</view>
+    </view>
+    <view class="btn ghost" bindtap="reset">重新描述</view>
+  </view>
+
+  <view class="disclaimer">
+    提示：智能分诊仅作参考，不能替代医生诊断。出现剧烈胸痛、呼吸困难、昏迷、大出血等情况请立即前往急诊或拨打 120。
+  </view>
+</view>
