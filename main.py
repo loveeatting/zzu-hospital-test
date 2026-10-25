@@ -66,6 +66,29 @@ CREATE TABLE IF NOT EXISTS reviews (
 """
 
 
+def ensure_database():
+    """云端首次启动时自动建库 + 灌演示数据（本地已有库则跳过）。"""
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='students'"
+        ).fetchone()
+    finally:
+        conn.close()
+
+    if row is not None:
+        return False
+
+    import init_db
+    init_db.main()
+    try:
+        import seed_reviews
+        seed_reviews.main()
+    except Exception:
+        pass
+    return True
+
+
 def ensure_extra_tables():
     """补建评价表，避免要求用户重建整个数据库。"""
     conn = get_conn()
@@ -75,6 +98,9 @@ def ensure_extra_tables():
     finally:
         conn.close()
 
+
+if ensure_database():
+    print("[startup] 检测到空数据库，已自动初始化演示数据")
 
 ensure_extra_tables()
 
