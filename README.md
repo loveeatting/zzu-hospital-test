@@ -1,5 +1,11 @@
 # 郑州大学校医院智能就医服务平台（原型）
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![Python](https://img.shields.io/badge/Python-3.13-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.159-009688)
+![Tests](https://img.shields.io/badge/smoke__test-28%20passed-brightgreen)
+[![Release](https://img.shields.io/github/v/release/loveeatting/zzu-hospital-test?display_name=tag)](https://github.com/loveeatting/zzu-hospital-test/releases)
+
 > 面向校园场景的智能就医服务平台原型：**AI 导诊（症状→科室→医生→预约）+ AI 客服（知识库问答，带来源标注）+ 健康科普 + 就诊评价**。
 >
 > 本项目为**课程/竞赛原型**，不含真实患者数据，所有医疗与医保内容均为演示用途，**不构成医疗建议**。
@@ -17,6 +23,16 @@
 | **就诊评价** | 星级 + 四维评分 + 文字 + 匿名，一人一评，公开可见，医生评分聚合 |
 | **账号体系** | 加盐哈希密码、Bearer 会话、**单设备登录（会话互斥）** |
 | **安全兜底** | 急重症关键词前置拦截（不依赖模型）+ 风险提示 |
+
+## 界面预览
+
+<p align="center">
+  <img src="docs/screenshots/home.jpg" width="30%" alt="首页" />
+  <img src="docs/screenshots/service.jpg" width="30%" alt="AI 客服（带来源标注）" />
+  <img src="docs/screenshots/health.jpg" width="30%" alt="健康知识" />
+</p>
+
+> 截图放置说明见 [docs/screenshots/README.md](docs/screenshots/README.md)。未放图片时上面会显示占位图标。
 
 ## 2. 技术栈
 
