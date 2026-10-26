@@ -302,6 +302,23 @@ GROUPS = [
     },
 ]
 
+# "可能方向"跟着最终科室走，避免"推外科却说胃肠炎"这种矛盾
+LIKELY_MAP = {
+    ("respiratory", "内科"): "上呼吸道感染或流感",
+    ("respiratory", "耳鼻咽喉科"): "咽炎、扁桃体炎或过敏性鼻炎",
+    ("digestive", "内科"): "急性胃肠炎或胃炎",
+    ("digestive", "外科"): "急性阑尾炎等需要外科处理的情况",
+    ("musculoskeletal", "外科"): "急性扭伤、骨折可能",
+    ("musculoskeletal", "康复理疗科（疼痛科）"): "腰肌劳损、颈肩软组织劳损",
+    ("skin", "皮肤科"): "荨麻疹、湿疹或过敏性皮炎",
+    ("eye", "眼科"): "结膜炎、干眼或视疲劳",
+    ("ent", "耳鼻咽喉科"): "鼻炎、咽炎或中耳问题",
+    ("dental", "口腔科"): "龋齿、牙髓炎或牙周问题",
+    ("gyn", "妇科"): "痛经、月经不调或妇科炎症",
+    ("tcm", "中医科"): "睡眠障碍、慢性疲劳或体质失调",
+    ("tcm", "内科"): "需先排除贫血等器质性问题",
+}
+
 EMERGENCY_HINT = "出现意识改变、呼吸困难、大出血、剧烈胸痛等情况，请不要等待门诊，直接到急诊或拨打 120。"
 
 MIN_QUESTIONS = 2      # 至少追问 2 个鉴别问题才给结论
@@ -419,7 +436,7 @@ def answer(messages, tools):
                                 "，我已经问得差不多了" if done_asking and not confident else ""),
             "",
             "**建议挂：%s**" % top_dept,
-            "可能方向：%s" % group["likely"],
+            "可能方向：%s" % LIKELY_MAP.get((group["id"], top_dept), group["likely"]),
             "判断置信度：%s" % conf,
             "",
             "就诊提示：%s" % group["advice"],
