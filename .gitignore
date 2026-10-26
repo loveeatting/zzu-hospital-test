@@ -47,3 +47,6 @@ zzu-autostart.vbs
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Render 部署钩子（含密钥，切勿提交）
+.render-hook
