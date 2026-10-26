@@ -681,7 +681,7 @@ function paintChat() {
     } else if (m.card && m.card.type === 'schedules' && m.card.doctor_id) {
       extra = `<button class="btn ghost" data-action="doctor" data-id="${m.card.doctor_id}" data-name="">查看全部排班</button>`;
     }
-    return `<div class="bubble ${me ? 'me' : ''}">${esc(m.content).replace(/\n/g, '<br/>')}${extra}${srcHtml}</div>`;
+    return `<div class="bubble ${me ? 'me' : ''}">${esc(m.content).replace(/\n/g, '<br/>')}${extra}</div>`;
   }).join('');
 
   const chips = document.getElementById('chatChips');
@@ -1087,7 +1087,7 @@ function paintServiceChat() {
           (s.verified ? '已核实' : '未核实') + '</span> 来源：' + esc(s.source) + '</div>'
         ).join('') + '</div>'
       : '';
-    return `<div class="bubble ${me ? 'me' : ''}">${esc(m.content).replace(/\n/g, '<br/>')}${extra}</div>`;
+    return `<div class="bubble ${me ? 'me' : ''}">${esc(m.content).replace(/\n/g, '<br/>')}${extra}${srcHtml}</div>`;
   }).join('');
 
   const chips = document.getElementById('serviceChips');
