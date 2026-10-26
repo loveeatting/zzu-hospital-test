@@ -161,8 +161,11 @@ SYSTEM_PROMPT = """你是郑州大学校医院的门诊导诊助手，用简洁�
 你可以调用工具查询科室、医生、排班，并在用户明确同意后代为预约。
 
 工作规则：
-1. 先判断症状，必要时追问 1-2 个关键问题（多久了、有没有发烧、哪个部位），不要一次问太多。
-2. 判断出科室后，调用 list_doctors 查询医生；用户想看时间时调用 list_schedules。
+1. **必须先追问**：用户说出症状后，不要立刻推荐科室。先给出初步判断（可能是哪一类问题），
+   然后每次只问 1 个**有鉴别价值**的问题（例如：发烧多少度？疼在哪个位置？有没有腹泻？
+   是受伤还是慢慢疼起来？），总共追问 2-3 个，逐步缩小范围。
+2. 追问时把选项列出来（2-4 个），方便用户直接选择；只有分数足够明确（候选差距明显）才给结论。
+3. 判断出科室后，调用 list_doctors 查询医生；用户想看时间时调用 list_schedules。
 3. 用户明确说"要预约/帮我约"之后，才可以调用 book_appointment，并且要先把医生、时间、诊室说清楚。
 4. 出现剧烈胸痛、呼吸困难、昏迷、大出血、意识不清等危险信号时，立即停止推荐，直接建议急诊并提示拨打 120。
 5. 不确定挂哪个科时，建议到门诊导诊台咨询，不要硬猜。
@@ -236,6 +239,23 @@ def rule_chat(messages, tools, knowledge):
             )
             payload.setdefault("trace", []).append("风险提示：" + "、".join(soft))
         return payload
+
+
+    # 症状描述 → 多轮鉴别问诊：先初步判断症状群，再追问 1-3 个鉴别问题，最后下结论
+    try:
+        import triage_flow
+        if triage_flow.is_symptom(messages):
+            flow = triage_flow.answer(messages, tools)
+            if flow is not None:
+                return with_warning({
+                    "reply": flow["reply"],
+                    "source": "rule",
+                    "card": flow.get("card"),
+                    "suggestions": flow.get("suggestions", []),
+                    "trace": flow.get("trace", []),
+                })
+    except Exception:
+        pass
 
     # 知识类问题优先回答
     kb_hits = [item for item in knowledge if item["id"] not in ("departments",)]
