@@ -145,7 +145,45 @@ async function doLogin() {
 
 const PALETTE = ['#1a73e8', '#12a05c', '#e8710a', '#8e44ad', '#d93025', '#0b8ea8'];
 
+const HOME_MODULES = [
+  { action: 'intro', icon: '院', color: '#1a73e8', title: '医院简介', desc: '医院概况·就诊须知' },
+  { action: 'dept-list', icon: '科', color: '#12a05c', title: '科室介绍', desc: '14 个科室' },
+  { action: 'experts', icon: '医', color: '#e8710a', title: '专家介绍', desc: '职称·擅长' },
+  { action: 'guide', icon: '指', color: '#8e44ad', title: '就医指南', desc: '挂号·退号' },
+  { action: 'access', icon: '楼', color: '#0b8ea8', title: '来院指引', desc: '交通·楼层' },
+  { action: 'appoint', icon: '约', color: '#d93025', title: '预约挂号', desc: '挂号·我的预约' },
+  { action: 'agent', icon: 'AI', color: '#087f8c', title: 'AI 导诊', desc: '问诊·判断科室' },
+  { action: 'health', icon: '康', color: '#00a3a3', title: '健康知识', desc: '症状·预防' },
+  { action: 'service', icon: '服', color: '#7b61ff', title: '服务咨询', desc: '时间·值班·医保' }
+];
+
 async function renderDepartments() {
+  const tiles = HOME_MODULES.map((m) => `
+    <div class="tile tap" data-action="${m.action}">
+      <div class="tile-icon" style="background:${m.color}">${esc(m.icon)}</div>
+      <div class="tile-title">${esc(m.title)}</div>
+      <div class="tile-desc">${esc(m.desc)}</div>
+    </div>`).join('');
+
+  show(`
+    <div class="home-hero">
+      <div class="home-title">郑州大学医院</div>
+      <div class="home-sub">门诊预约 · 智能导诊 · 健康科普</div>
+      <div class="home-links">
+        <span class="home-link" data-action="guide">就医指南</span>
+        <span class="home-link" data-action="access">来院指引</span>
+        <span class="home-link" data-action="all-reviews" data-doctor="" data-name="">就诊口碑</span>
+      </div>
+    </div>
+    <div class="notice-bar">门诊时间：周一至周五 08:00–12:00 / 14:00–17:30，急诊 24 小时开放</div>
+    <div class="mod-grid">${tiles}</div>
+    <div class="disclaimer">页面信息为原型演示数据，具体以医院公告为准。</div>
+  `);
+}
+
+/* ---------------- 科室列表 / 预约挂号 ---------------- */
+
+async function renderDeptList(appointMode) {
   show('<div class="loading">加载中…</div>');
   try {
     const list = await api('/api/departments');
@@ -159,53 +197,159 @@ async function renderDepartments() {
         <div class="arrow">›</div>
       </div>`).join('');
 
+    const chips = appointMode
+      ? '<div class="chips"><div class="chip" data-action="my">我的预约</div><div class="chip" data-action="guide">就诊流程</div></div>'
+      : '';
+
     show(`
-      <div class="card tap dept" data-action="agent">
-        <div class="avatar" style="background:#0b8ea8">AI</div>
-        <div class="dept-body">
-          <div class="title">AI 导诊助手</div>
-          <div class="sub">口语描述症状，边聊边帮你约号</div>
-        </div>
-        <div class="arrow">›</div>
+      <div class="row" style="margin-bottom:10px;">
+        <div class="title">${appointMode ? '预约挂号' : '科室介绍'}</div>
+        <button class="linkbtn" style="background:#eef3fd;color:#1a73e8;" data-action="depts">返回首页</button>
       </div>
-      <div class="card tap dept" data-action="all-reviews" data-doctor="" data-name="">
-        <div class="avatar" style="background:#f5b301">碑</div>
-        <div class="dept-body">
-          <div class="title">就诊口碑</div>
-          <div class="sub">看看同学们对医生和就诊体验的评价</div>
-        </div>
-        <div class="arrow">›</div>
-      </div>
-      <div class="card tap dept" data-action="service">
-        <div class="avatar" style="background:#7b61ff">服</div>
-        <div class="dept-body">
-          <div class="title">服务咨询</div>
-          <div class="sub">营业时间 · 值班医生 · 医保政策 · 就诊流程</div>
-        </div>
-        <div class="arrow">›</div>
-      </div>
-      <div class="card tap dept" data-action="health">
-        <div class="avatar" style="background:#0b8ea8">康</div>
-        <div class="dept-body">
-          <div class="title">校园健康知识</div>
-          <div class="sub">症状、预防、照护与就医时机，搜一搜</div>
-        </div>
-        <div class="arrow">›</div>
-      </div>
-      <div class="card tap dept" data-action="my">
-        <div class="avatar" style="background:#12a05c">约</div>
-        <div class="dept-body">
-          <div class="title">我的预约</div>
-          <div class="sub">查看、取消已预约的号</div>
-        </div>
-        <div class="arrow">›</div>
-      </div>
-      <div class="notice">温馨提示：请提前 15 分钟到院取号，携带校园卡或身份证。</div>
+      ${chips}
       ${cards}
+      <div class="notice">先选科室，再选医生与时段；预约成功后可在「我的预约」中查看或取消。</div>
     `);
   } catch (e) {
     show(`<div class="card"><div class="err">${esc(e.message)}</div>
-      <button class="btn" data-action="depts">重试</button></div>`);
+      <button class="btn" data-action="depts">返回首页</button></div>`);
+  }
+}
+
+/* ---------------- 医院简介 ---------------- */
+
+async function renderHospitalIntro() {
+  show('<div class="loading">加载中…</div>');
+  try {
+    const info = await api('/api/hospital/info');
+    const hours = (info.hours || []).map((h) => `<div class="sub">· ${esc(h)}</div>`).join('');
+    const notes = (info.notes || []).map((h) => `<div class="sub">· ${esc(h)}</div>`).join('');
+    show(`
+      <div class="row" style="margin-bottom:10px;">
+        <div class="title">医院简介</div>
+        <button class="linkbtn" style="background:#eef3fd;color:#1a73e8;" data-action="depts">返回首页</button>
+      </div>
+      <div class="card">
+        <div class="date-title">${esc(info.name || '')}</div>
+        <div class="sub">${esc(info.address || '')}</div>
+        <div class="sub">${esc(info.phone || '')}</div>
+      </div>
+      <div class="card"><div class="date-title">门诊时间</div>${hours}</div>
+      <div class="card"><div class="date-title">就诊须知</div>${notes}</div>
+      <div class="card">
+        <div class="date-title">更多信息</div>
+        <button class="btn ghost" data-action="guide">就医指南</button>
+        <button class="btn ghost" data-action="access">来院指引</button>
+        <button class="btn ghost" data-action="all-reviews" data-doctor="" data-name="">就诊口碑</button>
+      </div>
+      <div class="disclaimer">${esc(info.disclaimer || '')}</div>
+    `);
+  } catch (e) {
+    show(`<div class="card"><div class="err">${esc(e.message)}</div>
+      <button class="btn" data-action="depts">返回首页</button></div>`);
+  }
+}
+
+/* ---------------- 专家介绍 ---------------- */
+
+async function renderExperts() {
+  show('<div class="loading">加载中…</div>');
+  try {
+    const depts = await api('/api/departments');
+    const doctors = await api('/api/doctors');
+    const deptName = {};
+    depts.forEach((d) => { deptName[d.id] = d.name; });
+
+    const cards = doctors.map((x) => `
+      <div class="card tap" data-action="doctor" data-id="${x.id}" data-name="${esc(x.name)}">
+        <div class="row">
+          <div class="title">${esc(x.name)}</div>
+          <div class="tag ${x.source === 'real' ? '' : 'gray'}">${esc(x.title || '')}</div>
+        </div>
+        <div class="sub">${esc(deptName[x.department_id] || '')}</div>
+        <div class="sub">擅长：${esc(x.specialty || '')}</div>
+        <div class="sub" style="color:#e8a33d;">${x.review_count > 0 ? '★ ' + x.rating + '（' + x.review_count + ' 条评价）' : '暂无评价'}</div>
+      </div>`).join('');
+
+    show(`
+      <div class="row" style="margin-bottom:10px;">
+        <div class="title">专家介绍</div>
+        <button class="linkbtn" style="background:#eef3fd;color:#1a73e8;" data-action="depts">返回首页</button>
+      </div>
+      <div class="card">
+        <div class="row">
+          <div class="sub" style="margin:0;">共 ${doctors.length} 位医生</div>
+          <button class="linkbtn" style="background:#fff7e6;color:#e8a33d;" data-action="all-reviews" data-doctor="" data-name="">全部评价</button>
+        </div>
+      </div>
+      ${cards}
+      <div class="disclaimer">标注「模拟」的医生为官网未公布、为演示补全的信息。</div>
+    `);
+  } catch (e) {
+    show(`<div class="card"><div class="err">${esc(e.message)}</div>
+      <button class="btn" data-action="depts">返回首页</button></div>`);
+  }
+}
+
+/* ---------------- 就医指南 ---------------- */
+
+async function renderGuide() {
+  show('<div class="loading">加载中…</div>');
+  try {
+    const data = await api('/api/hospital/flow');
+    const steps = (data.flow || []).map((s, i) =>
+      `<div class="sub"><b>${i + 1}. ${esc(s.step)}</b>：${esc(s.detail)}</div>`).join('');
+    const refund = (data.refund || []).map((r) => `<div class="sub">· ${esc(r)}</div>`).join('');
+    show(`
+      <div class="row" style="margin-bottom:10px;">
+        <div class="title">就医指南</div>
+        <button class="linkbtn" style="background:#eef3fd;color:#1a73e8;" data-action="depts">返回首页</button>
+      </div>
+      <div class="card"><div class="date-title">就诊流程</div>${steps}</div>
+      <div class="card"><div class="date-title">退号与爽约规则</div>${refund}</div>
+      <div class="card">
+        <div class="date-title">开始挂号</div>
+        <button class="btn" data-action="appoint">预约挂号</button>
+        <button class="btn ghost" data-action="agent">不确定挂哪个科？问问 AI 导诊</button>
+      </div>
+      <div class="disclaimer">${esc(data.disclaimer || '')}</div>
+    `);
+  } catch (e) {
+    show(`<div class="card"><div class="err">${esc(e.message)}</div>
+      <button class="btn" data-action="depts">返回首页</button></div>`);
+  }
+}
+
+/* ---------------- 来院指引（交通 + 楼层分布） ---------------- */
+
+async function renderAccess() {
+  show('<div class="loading">加载中…</div>');
+  try {
+    const data = await api('/api/hospital/access');
+    const transport = (data.transport || []).map((t) => `<div class="sub">· ${esc(t)}</div>`).join('');
+    const floors = (data.floors || []).map((f) => `
+      <div class="card">
+        <div class="date-title">${esc(f.floor)}</div>
+        ${(f.items || []).map((i) => `<div class="sub">· ${esc(i)}</div>`).join('')}
+      </div>`).join('');
+    const tips = (data.tips || []).map((t) => `<div class="sub">· ${esc(t)}</div>`).join('');
+    show(`
+      <div class="row" style="margin-bottom:10px;">
+        <div class="title">来院指引</div>
+        <button class="linkbtn" style="background:#eef3fd;color:#1a73e8;" data-action="depts">返回首页</button>
+      </div>
+      <div class="card">
+        <div class="date-title">${esc(data.name || '')}</div>
+        <div class="sub">${esc(data.address || '')}</div>
+      </div>
+      <div class="card"><div class="date-title">交通路线</div>${transport}</div>
+      ${floors}
+      <div class="card"><div class="date-title">就诊提示</div>${tips}</div>
+      <div class="disclaimer">${esc(data.note || '')}</div>
+    `);
+  } catch (e) {
+    show(`<div class="card"><div class="err">${esc(e.message)}</div>
+      <button class="btn" data-action="depts">返回首页</button></div>`);
   }
 }
 
@@ -259,6 +403,14 @@ function dateLabel(iso) {
 
 async function renderSchedules(doctor) {
   state.doctor = doctor;
+  // 从「专家介绍」直接进入时没有 state.dept，这里按 department_id 回填科室名
+  if (!state.dept && doctor && doctor.department_id) { // deptFallbackDone
+    try {
+      const ds = await api('/api/departments');
+      const hit = ds.filter((d) => d.id === doctor.department_id)[0];
+      if (hit) state.dept = { id: hit.id, name: hit.name };
+    } catch (e) { /* ignore */ }
+  }
   show('<div class="loading">加载中…</div>');
   try {
     const list = await api('/api/schedules?doctor_id=' + encodeURIComponent(doctor.id));
@@ -512,6 +664,12 @@ document.addEventListener('click', (ev) => {
       });
       break;
     case 'depts': renderDepartments(); break;
+    case 'dept-list': renderDeptList(false); break;
+    case 'appoint': renderDeptList(true); break;
+    case 'intro': renderHospitalIntro(); break;
+    case 'experts': renderExperts(); break;
+    case 'guide': renderGuide(); break;
+    case 'access': renderAccess(); break;
     case 'dept':
       renderDoctors({ id: el.dataset.id, name: el.dataset.name });
       break;

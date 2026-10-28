@@ -851,6 +851,11 @@ def hospital_insurance(q: str | None = None):
     return hospital_info.insurance_brief(q or "")
 
 
+@app.get("/api/hospital/access", tags=["服务咨询"])
+def hospital_access_api():
+    return hospital_info.hospital_access()
+
+
 @app.get("/api/hospital/flow", tags=["服务咨询"])
 def hospital_flow():
     return {

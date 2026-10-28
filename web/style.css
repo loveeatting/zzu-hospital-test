@@ -256,3 +256,59 @@ textarea { min-height: 110px; resize: vertical; line-height: 1.7; }
   align-items: center;
   gap: 6px;
 }
+
+/* ---------- 首页九宫格 ---------- */
+.home-hero {
+  background: linear-gradient(135deg, #1a73e8, #0b8ea8);
+  color: #fff;
+  border-radius: 16px;
+  padding: 18px 16px;
+  margin-bottom: 12px;
+}
+.home-title { font-size: 20px; font-weight: 700; }
+.home-sub { font-size: 12px; opacity: 0.9; margin-top: 4px; }
+.home-links { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.home-link {
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.22);
+  padding: 5px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.notice-bar {
+  background: #fff8e6;
+  color: #8a6d00;
+  font-size: 12px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+.mod-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.tile {
+  background: #fff;
+  border-radius: 14px;
+  padding: 12px 6px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+.tile-icon {
+  width: 42px;
+  height: 42px;
+  line-height: 42px;
+  margin: 0 auto 8px;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+}
+.tile-title { font-size: 13px; font-weight: 600; color: #222; }
+.tile-desc { font-size: 10px; color: #999; margin-top: 3px; line-height: 1.4; }
+@media (max-width: 360px) {
+  .tile-title { font-size: 12px; }
+  .tile-desc { font-size: 9px; }
+}

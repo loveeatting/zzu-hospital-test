@@ -43,6 +43,29 @@ REFUND_RULES = [
     "爽约（预约未到且未退号）累计 3 次，将限制 30 天内线上预约",
 ]
 
+# ---------------- 来院指引（交通 + 楼层分布，合并原"楼层分布"与"导航指引"） ----------------
+
+ACCESS = {
+    "transport": [
+        "地铁：郑州地铁 1 号线「郑州大学」站，出站步行约 10 分钟到门诊楼",
+        "公交：乘至「郑州大学」站或「郑大新区」站，步行 5-10 分钟",
+        "自驾：导航搜索「郑州大学医院」，校园内限速 20 km/h，门诊楼前有停车位",
+        "校内：主校区内步行或乘校园车至门诊楼一层导诊台",
+    ],
+    "floors": [
+        {"floor": "门诊楼 1 层", "items": ["导诊台", "挂号 / 收费窗口", "药房", "急诊"]},
+        {"floor": "门诊楼 2 层", "items": ["内科", "外科", "妇科", "眼科", "耳鼻咽喉科"]},
+        {"floor": "门诊楼 3 层", "items": ["口腔科", "皮肤科", "中医科", "康复理疗科（疼痛科）"]},
+        {"floor": "医技楼", "items": ["超声科", "检验科", "放射科"]},
+        {"floor": "体检中心", "items": ["体检科", "成人预防接种门诊"]},
+    ],
+    "tips": [
+        "就诊请携带校园卡或身份证，医保结算需出示医保电子凭证",
+        "线上预约后请在就诊时段前 15 分钟到院取号",
+    ],
+    "note": "楼层分布为原型示意，具体诊室位置请以院内指示牌为准",
+}
+
 # ---------------- 医保政策 ----------------
 
 INSURANCE = [
@@ -277,5 +300,17 @@ def on_duty(conn, now=None):
         "period": used_period,
         "is_today": used_date == today.isoformat(),
         "doctors": [dict(r) for r in rows],
+        "disclaimer": DISCLAIMER,
+    }
+
+
+def hospital_access():
+    return {
+        "name": HOSPITAL["name"],
+        "address": HOSPITAL["address"],
+        "transport": ACCESS["transport"],
+        "floors": ACCESS["floors"],
+        "tips": ACCESS["tips"],
+        "note": ACCESS["note"],
         "disclaimer": DISCLAIMER,
     }
