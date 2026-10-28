@@ -172,6 +172,7 @@ async function renderDepartments() {
       <div class="home-links">
         <span class="home-link" data-action="guide">就医指南</span>
         <span class="home-link" data-action="access">来院指引</span>
+        <span class="home-link" data-action="nav">院内导航</span>
         <span class="home-link" data-action="all-reviews" data-doctor="" data-name="">就诊口碑</span>
       </div>
     </div>
@@ -192,7 +193,10 @@ async function renderDeptList(appointMode) {
         <div class="avatar" style="background:${PALETTE[i % PALETTE.length]}">${esc(d.name.slice(0, 1))}</div>
         <div class="dept-body">
           <div class="title">${esc(d.name)}<span class="tag ${d.source === 'real' ? 'green' : 'gray'}" style="font-size:11px;vertical-align:middle;margin-left:6px;">${d.source === 'real' ? '真实' : '模拟'}</span></div>
-          <div class="sub">${esc(d.location || '')}</div>
+          <div class="sub">${esc(d.location || '')}
+            <button class="linkbtn" style="background:#f0f6ff;color:#1a73e8;font-size:11px;padding:2px 8px;margin-left:6px;"
+              data-action="nav-dept" data-name="${esc(d.name)}">怎么走</button>
+          </div>
         </div>
         <div class="arrow">›</div>
       </div>`).join('');
@@ -345,6 +349,10 @@ async function renderAccess() {
       <div class="card"><div class="date-title">交通路线</div>${transport}</div>
       ${floors}
       <div class="card"><div class="date-title">就诊提示</div>${tips}</div>
+      <div class="card">
+        <div class="date-title">找不到科室？</div>
+        <button class="btn" data-action="nav">院内导航（示意地图）</button>
+      </div>
       <div class="disclaimer">${esc(data.note || '')}</div>
     `);
   } catch (e) {
@@ -670,6 +678,8 @@ document.addEventListener('click', (ev) => {
     case 'experts': renderExperts(); break;
     case 'guide': renderGuide(); break;
     case 'access': renderAccess(); break;
+    case 'nav': renderNav(''); break;
+    case 'nav-dept': renderNav(el.dataset.name || ''); break;
     case 'dept':
       renderDoctors({ id: el.dataset.id, name: el.dataset.name });
       break;
@@ -1345,6 +1355,115 @@ async function renderKbItem(id) {
   } catch (e) {
     show(`<div class="card"><div class="err">${esc(e.message)}</div>
       <button class="btn" data-action="kb">返回知识库</button></div>`);
+  }
+}
+
+/* ---------------- 院内导航 ---------------- */
+
+const NAV_SHORT = {
+  dental: '口腔区',
+  clinic: '门诊区',
+  imaging: '医技区',
+  emergency: '急诊药房',
+  vaccine: '接种区'
+};
+
+async function renderNav(deptName) {
+  show('<div class="loading">加载中…</div>');
+  try {
+    const map = await api('/api/hospital/nav/areas');
+    const depts = await api('/api/departments');
+    let nav = null;
+    if (deptName) {
+      nav = await api('/api/hospital/nav?dept=' + encodeURIComponent(deptName));
+    }
+    paintNav(map, depts, nav);
+  } catch (e) {
+    show('<div class="card"><div class="err">' + esc(e.message) + '</div>' +
+      '<button class="btn" data-action="depts">返回首页</button></div>');
+  }
+}
+
+function navSvg(map, targetKey) {
+  const areas = (map.areas || []).map(function (a) {
+    const on = a.key === targetKey;
+    const r = a.rect;
+    return '<g>' +
+      '<rect x="' + r[0] + '" y="' + r[1] + '" width="' + r[2] + '" height="' + r[3] +
+      '" rx="6" fill="' + (on ? '#1a73e8' : '#eef3fd') + '" stroke="' + (on ? '#1a73e8' : '#c8d8f0') + '" stroke-width="1"/>' +
+      '<text x="' + (r[0] + r[2] / 2) + '" y="' + (r[1] + r[3] / 2 + 3) + '" text-anchor="middle" ' +
+      'font-size="8" fill="' + (on ? '#fff' : '#5b7bb0') + '" font-weight="' + (on ? '700' : '400') + '">' +
+      esc(NAV_SHORT[a.key] || a.name) + '</text></g>';
+  }).join('');
+
+  const lm = map.landmarks || {};
+  function mark(m, fill, color) {
+    if (!m) return '';
+    const r = m.rect;
+    return '<g><rect x="' + r[0] + '" y="' + r[1] + '" width="' + r[2] + '" height="' + r[3] +
+      '" rx="4" fill="' + fill + '" stroke="none"/>' +
+      '<text x="' + (r[0] + r[2] / 2) + '" y="' + (r[1] + r[3] / 2 + 3) +
+      '" text-anchor="middle" font-size="7" fill="' + color + '">' + esc(m.label) + '</text></g>';
+  }
+
+  return '<svg viewBox="0 0 324 236" class="navmap" xmlns="http://www.w3.org/2000/svg">' +
+    '<rect x="0" y="0" width="324" height="236" fill="#f7f9fc" rx="10"/>' +
+    areas +
+    mark(lm.garden, '#e6f7ee', '#12a05c') +
+    mark(lm.elevator, '#eeeeee', '#777') +
+    mark(lm.gate, '#d93025', '#fff') +
+    '</svg>';
+}
+
+function paintNav(map, depts, nav) {
+  const targetKey = nav && nav.area ? nav.area.key : null;
+  const options = depts.map(function (d) {
+    const sel = nav && nav.dept === d.name ? ' selected' : '';
+    return '<option value="' + esc(d.name) + '"' + sel + '>' + esc(d.name) + '</option>';
+  }).join('');
+
+  const steps = nav ? nav.steps.map(function (s, i) {
+    return '<div class="nav-step"><span class="nav-num">' + (i + 1) + '</span>' + esc(s) + '</div>';
+  }).join('') : '';
+
+  const header = nav
+    ? '<div class="card"><div class="row"><div class="title">' + esc(nav.dept) + '</div>' +
+      '<div class="tag ' + (nav.found ? 'green' : 'gray') + '">' + (nav.found ? '已定位' : '未标注') + '</div></div>' +
+      '<div class="sub">楼层：' + esc(nav.floor) + (nav.area ? ' · 区域：' + esc(nav.area.name) : '') + '</div></div>'
+    : '<div class="card"><div class="sub" style="margin:0;">先选择你要去的科室，我会给出从大门出发的路线。</div></div>';
+
+  show(`
+    <div class="row" style="margin-bottom:10px;">
+      <div class="title">院内导航</div>
+      <button class="linkbtn" style="background:#eef3fd;color:#1a73e8;" data-action="access">返回来院指引</button>
+    </div>
+    <div class="card">
+      <div class="sub" style="margin:0 0 8px;">选择科室</div>
+      <select id="navSelect" class="nav-select">
+        <option value="">请选择科室…</option>
+        ${options}
+      </select>
+    </div>
+    ${header}
+    <div class="card">
+      <div class="sub" style="margin:0 0 8px;">一楼示意图（依据院内平面图）</div>
+      ${navSvg(map, targetKey)}
+      <div class="nav-legend">
+        <span><i style="background:#1a73e8"></i>目的地</span>
+        <span><i style="background:#d93025"></i>大门</span>
+        <span><i style="background:#e6f7ee;border:1px solid #12a05c"></i>中心花园</span>
+        <span><i style="background:#eeeeee;border:1px solid #bbb"></i>电梯</span>
+      </div>
+    </div>
+    ${nav ? '<div class="card"><div class="sub" style="margin:0 0 8px;">步行路线</div>' + steps + '</div>' : ''}
+    <div class="disclaimer">${esc(nav ? (nav.note || '') : '路线依据一楼平面图的相对位置整理，具体诊室号请以院内指示牌为准。')}</div>
+  `);
+
+  const sel = document.getElementById('navSelect');
+  if (sel) {
+    sel.addEventListener('change', function () {
+      if (sel.value) renderNav(sel.value);
+    });
   }
 }
 

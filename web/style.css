@@ -323,3 +323,51 @@ textarea { min-height: 110px; resize: vertical; line-height: 1.7; }
   background: #e6f7ee; color: #12a05c; font-size: 10px;
   padding: 1px 6px; border-radius: 8px; margin-left: 4px;
 }
+
+/* ---------- 院内导航 ---------- */
+.navmap { width: 100%; height: auto; display: block; }
+.nav-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #dfe3ea;
+  border-radius: 10px;
+  font-size: 14px;
+  background: #fff;
+  color: #222;
+}
+.nav-step {
+  display: flex;
+  align-items: flex-start;
+  font-size: 13px;
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+.nav-num {
+  flex: 0 0 20px;
+  height: 20px;
+  line-height: 20px;
+  text-align: center;
+  background: #1a73e8;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 11px;
+  margin-right: 8px;
+  margin-top: 2px;
+}
+.nav-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 11px;
+  color: #888;
+  margin-top: 8px;
+}
+.nav-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  margin-right: 4px;
+  vertical-align: middle;
+}

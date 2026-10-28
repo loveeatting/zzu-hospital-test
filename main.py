@@ -908,6 +908,16 @@ def hospital_insurance(q: str | None = None):
     return hospital_info.insurance_brief(q or "")
 
 
+@app.get("/api/hospital/nav/areas", tags=["来院指引"])
+def hospital_nav_areas():
+    return {"areas": hospital_info.nav_areas(), "landmarks": hospital_info.NAV_LANDMARKS}
+
+
+@app.get("/api/hospital/nav", tags=["来院指引"])
+def hospital_nav(dept: str | None = None):
+    return hospital_info.nav_for(dept or "")
+
+
 @app.get("/api/hospital/access", tags=["服务咨询"])
 def hospital_access_api():
     return hospital_info.hospital_access()

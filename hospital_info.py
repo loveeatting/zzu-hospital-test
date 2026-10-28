@@ -331,3 +331,118 @@ def hospital_access():
         "note": ACCESS["note"],
         "disclaimer": DISCLAIMER,
     }
+
+
+# ---------------- 院内导航（依据一楼平面图的相对位置） ----------------
+
+NAV_AREAS = [
+    {
+        "key": "dental",
+        "name": "口腔诊疗区",
+        "floor": "一楼",
+        "rect": [16, 36, 86, 64],
+        "depts": ["口腔科", "口腔颌面外科", "口腔正畸科", "口腔修复", "医疗美容科"],
+        "steps": ["从大门进入门诊楼", "沿通道向左（西侧）走", "经过中心花园左侧连廊",
+                  "到达口腔诊疗区（西北侧）"],
+    },
+    {
+        "key": "clinic",
+        "name": "门诊诊疗区",
+        "floor": "一楼",
+        "rect": [110, 18, 150, 52],
+        "depts": ["内科", "外科", "骨科", "皮肤科", "换药室", "输液室"],
+        "steps": ["从大门进入门诊楼", "沿主通道直行，穿过中心花园", "到北侧走廊后向东",
+                  "到达门诊诊疗区（内科、外科、皮肤科、骨科）"],
+    },
+    {
+        "key": "imaging",
+        "name": "医技检查区",
+        "floor": "一楼",
+        "rect": [246, 84, 62, 70],
+        "depts": ["医学影像科", "超声科", "检验科", "放射科", "CT 机房", "C 臂机房"],
+        "steps": ["从大门进入门诊楼", "沿通道向右（东侧）走", "经中心花园东侧连廊",
+                  "到达医技检查区（影像、检验、超声）"],
+    },
+    {
+        "key": "emergency",
+        "name": "急诊与药房区",
+        "floor": "一楼",
+        "rect": [196, 166, 112, 40],
+        "depts": ["急诊室", "药房", "中医科", "康复理疗科（疼痛科）", "体检科"],
+        "steps": ["从大门进入门诊楼", "沿通道向右（东侧）前行至南侧走廊",
+                  "到达急诊与药房区（急诊室、药房、中医科、康复理疗科、体检中心）"],
+    },
+    {
+        "key": "vaccine",
+        "name": "计划免疫区",
+        "floor": "一楼",
+        "rect": [28, 166, 86, 40],
+        "depts": ["成人预防接种门诊"],
+        "steps": ["从大门进入门诊楼", "沿通道向左（西侧）走到西南角",
+                  "到达计划免疫 / 成人预防接种门诊"],
+    },
+]
+
+NAV_LANDMARKS = {
+    "gate": {"label": "大门", "rect": [140, 212, 64, 18]},
+    "garden": {"label": "中心花园", "rect": [112, 96, 76, 54]},
+    "elevator": {"label": "电梯", "rect": [196, 96, 16, 54]},
+}
+
+NAV_UNKNOWN = {
+    "floor": "未标注",
+    "area": None,
+    "steps": [
+        "该科室在一楼平面图上没有标注具体区域",
+        "请先到一楼导诊台确认所在楼层与位置",
+        "或乘电梯后按院内指示牌前往",
+    ],
+}
+
+
+def nav_areas():
+    return [
+        {"key": a["key"], "name": a["name"], "floor": a["floor"],
+         "rect": a["rect"], "depts": a["depts"]}
+        for a in NAV_AREAS
+    ]
+
+
+def nav_for(dept_name):
+    """按科室名返回导航信息。"""
+    dept_name = (dept_name or "").strip()
+    for area in NAV_AREAS:
+        if dept_name in area["depts"]:
+            return {
+                "dept": dept_name,
+                "found": True,
+                "floor": area["floor"],
+                "area": {"key": area["key"], "name": area["name"], "rect": area["rect"]},
+                "steps": area["steps"],
+                "landmarks": NAV_LANDMARKS,
+                "note": "路线依据一楼平面图的相对位置整理，具体诊室号请以院内指示牌为准。",
+            }
+
+    # 同科室名不完全匹配时的兜底（如"康复理疗科"对应"康复理疗科（疼痛科）"）
+    for area in NAV_AREAS:
+        for d in area["depts"]:
+            if dept_name and (dept_name in d or d in dept_name):
+                return {
+                    "dept": dept_name,
+                    "found": True,
+                    "floor": area["floor"],
+                    "area": {"key": area["key"], "name": area["name"], "rect": area["rect"]},
+                    "steps": area["steps"],
+                    "landmarks": NAV_LANDMARKS,
+                    "note": "路线依据一楼平面图的相对位置整理，具体诊室号请以院内指示牌为准。",
+                }
+
+    return {
+        "dept": dept_name,
+        "found": False,
+        "floor": NAV_UNKNOWN["floor"],
+        "area": None,
+        "steps": NAV_UNKNOWN["steps"],
+        "landmarks": NAV_LANDMARKS,
+        "note": "该科室未在一楼平面图标注，请以院内指示牌为准。",
+    }
