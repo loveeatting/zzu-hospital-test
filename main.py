@@ -89,12 +89,69 @@ def ensure_database():
     return True
 
 
+STAFF_DDL = """
+CREATE TABLE IF NOT EXISTS staff (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    username      TEXT    NOT NULL UNIQUE,
+    name          TEXT    NOT NULL,
+    salt          TEXT    NOT NULL,
+    password_hash TEXT    NOT NULL,
+    created_at    TEXT    NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS staff_sessions (
+    token      TEXT PRIMARY KEY,
+    staff_id   INTEGER NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS service_threads (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_no     TEXT    NOT NULL UNIQUE,
+    created_at     TEXT    NOT NULL,
+    updated_at     TEXT    NOT NULL,
+    unread_staff   INTEGER NOT NULL DEFAULT 0,
+    unread_student INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS service_messages (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    thread_id  INTEGER NOT NULL,
+    role       TEXT    NOT NULL,     -- user / ai / staff
+    sender     TEXT,
+    content    TEXT    NOT NULL,
+    created_at TEXT    NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_msg_thread ON service_messages (thread_id, id);
+"""
+
+DEFAULT_STAFF = [
+    ("staff001", "zzu123456", "张老师"),
+    ("staff002", "zzu123456", "李护士"),
+]
+
+
 def ensure_extra_tables():
-    """补建评价表，避免要求用户重建整个数据库。"""
+    """补建评价表与客服相关表，避免要求用户重建整个数据库。"""
     conn = get_conn()
     try:
         with conn:
             conn.execute(REVIEWS_DDL)
+            conn.executescript(STAFF_DDL)
+            for username, password, name in DEFAULT_STAFF:
+                row = conn.execute(
+                    "SELECT id FROM staff WHERE username = ?", (username,)
+                ).fetchone()
+                if row is None:
+                    salt = secrets.token_hex(8)
+                    conn.execute(
+                        "INSERT INTO staff (username, name, salt, password_hash, created_at) "
+                        "VALUES (?, ?, ?, ?, ?)",
+                        (username, name, salt,
+                         hashlib.sha256((salt + password).encode("utf-8")).hexdigest(),
+                         datetime.datetime.now().isoformat(timespec="seconds")),
+                    )
     finally:
         conn.close()
 
@@ -991,6 +1048,221 @@ def kb_item_api(item_id: str):
         "verified": item["verified"],
         "hint": item.get("hint"),
     }
+
+
+# ---------------- 真人客服 ----------------
+
+class StaffLoginRequest(BaseModel):
+    username: str = Field(min_length=1, max_length=32)
+    password: str = Field(min_length=1, max_length=64)
+
+
+class MessageRequest(BaseModel):
+    content: str = Field(min_length=1, max_length=1000)
+
+
+def current_staff(authorization: str | None = Header(default=None)):
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="请先登录客服账号")
+    token = authorization.split(" ", 1)[1].strip()
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT st.id, st.username, st.name FROM staff_sessions AS ss "
+            "JOIN staff AS st ON st.id = ss.staff_id WHERE ss.token = ?",
+            (token,),
+        ).fetchone()
+    finally:
+        conn.close()
+    if row is None:
+        raise HTTPException(status_code=401, detail="客服登录已失效，请重新登录")
+    return dict(row)
+
+
+def _thread_for_student(conn, student_no):
+    row = conn.execute(
+        "SELECT * FROM service_threads WHERE student_no = ?", (student_no,)
+    ).fetchone()
+    now = datetime.datetime.now().isoformat(timespec="seconds")
+    if row is None:
+        cur = conn.execute(
+            "INSERT INTO service_threads (student_no, created_at, updated_at) VALUES (?, ?, ?)",
+            (student_no, now, now),
+        )
+        row = conn.execute(
+            "SELECT * FROM service_threads WHERE id = ?", (cur.lastrowid,)
+        ).fetchone()
+    return row
+
+
+def _messages(conn, thread_id):
+    rows = conn.execute(
+        "SELECT id, role, sender, content, created_at FROM service_messages "
+        "WHERE thread_id = ? ORDER BY id",
+        (thread_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+@app.post("/api/staff/login", tags=["客服端"])
+def staff_login(req: StaffLoginRequest):
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT id, username, name, salt, password_hash FROM staff WHERE username = ?",
+            (req.username.strip(),),
+        ).fetchone()
+        if row is None or hash_password(req.password, row["salt"]) != row["password_hash"]:
+            raise HTTPException(status_code=401, detail="客服账号或密码错误")
+
+        token = secrets.token_hex(16)
+        with conn:
+            conn.execute("DELETE FROM staff_sessions WHERE staff_id = ?", (row["id"],))
+            conn.execute(
+                "INSERT INTO staff_sessions (token, staff_id, created_at) VALUES (?, ?, ?)",
+                (token, row["id"],
+                 datetime.datetime.now().isoformat(timespec="seconds")),
+            )
+    finally:
+        conn.close()
+    return {"token": token, "staff": {"id": row["id"], "username": row["username"], "name": row["name"]}}
+
+
+@app.get("/api/staff/threads", tags=["客服端"])
+def staff_threads(staff=Depends(current_staff)):
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            """
+            SELECT t.id, t.student_no, t.updated_at, t.unread_staff,
+                   s.name AS student_name,
+                   (SELECT content FROM service_messages m
+                     WHERE m.thread_id = t.id ORDER BY m.id DESC LIMIT 1) AS last_message,
+                   (SELECT role FROM service_messages m
+                     WHERE m.thread_id = t.id ORDER BY m.id DESC LIMIT 1) AS last_role,
+                   (SELECT COUNT(*) FROM service_messages m WHERE m.thread_id = t.id) AS total
+            FROM service_threads AS t
+            LEFT JOIN students AS s ON s.student_no = t.student_no
+            ORDER BY t.updated_at DESC
+            """
+        ).fetchall()
+    finally:
+        conn.close()
+    return [dict(r) for r in rows]
+
+
+@app.get("/api/staff/threads/{thread_id}", tags=["客服端"])
+def staff_thread_detail(thread_id: int, staff=Depends(current_staff)):
+    conn = get_conn()
+    try:
+        thread = conn.execute(
+            "SELECT t.*, s.name AS student_name, s.major FROM service_threads t "
+            "LEFT JOIN students s ON s.student_no = t.student_no WHERE t.id = ?",
+            (thread_id,),
+        ).fetchone()
+        if thread is None:
+            raise HTTPException(status_code=404, detail="会话不存在")
+        with conn:
+            conn.execute("UPDATE service_threads SET unread_staff = 0 WHERE id = ?", (thread_id,))
+        msgs = _messages(conn, thread_id)
+    finally:
+        conn.close()
+    return {"thread": dict(thread), "messages": msgs}
+
+
+@app.post("/api/staff/threads/{thread_id}/reply", tags=["客服端"])
+def staff_reply(thread_id: int, req: MessageRequest, staff=Depends(current_staff)):
+    conn = get_conn()
+    try:
+        thread = conn.execute(
+            "SELECT id FROM service_threads WHERE id = ?", (thread_id,)
+        ).fetchone()
+        if thread is None:
+            raise HTTPException(status_code=404, detail="会话不存在")
+        now = datetime.datetime.now().isoformat(timespec="seconds")
+        with conn:
+            conn.execute(
+                "INSERT INTO service_messages (thread_id, role, sender, content, created_at) "
+                "VALUES (?, 'staff', ?, ?, ?)",
+                (thread_id, staff["name"], req.content.strip(), now),
+            )
+            conn.execute(
+                "UPDATE service_threads SET updated_at = ?, unread_student = unread_student + 1 "
+                "WHERE id = ?",
+                (now, thread_id),
+            )
+        msgs = _messages(conn, thread_id)
+    finally:
+        conn.close()
+    return {"success": True, "messages": msgs}
+
+
+@app.get("/api/service/thread", tags=["服务咨询"])
+def service_thread(student=Depends(current_student)):
+    conn = get_conn()
+    try:
+        with conn:
+            thread = _thread_for_student(conn, student["student_no"])
+            conn.execute(
+                "UPDATE service_threads SET unread_student = 0 WHERE id = ?", (thread["id"],)
+            )
+        msgs = _messages(conn, thread["id"])
+    finally:
+        conn.close()
+    return {"thread_id": thread["id"], "messages": msgs}
+
+
+@app.post("/api/service/thread/messages", tags=["服务咨询"])
+def service_send(req: MessageRequest, student=Depends(current_student)):
+    conn = get_conn()
+    try:
+        now = datetime.datetime.now().isoformat(timespec="seconds")
+        with conn:
+            thread = _thread_for_student(conn, student["student_no"])
+            conn.execute(
+                "INSERT INTO service_messages (thread_id, role, sender, content, created_at) "
+                "VALUES (?, 'user', ?, ?, ?)",
+                (thread["id"], student["name"], req.content.strip(), now),
+            )
+            conn.execute(
+                "UPDATE service_threads SET updated_at = ?, unread_staff = unread_staff + 1 "
+                "WHERE id = ?",
+                (now, thread["id"]),
+            )
+        history_rows = _messages(conn, thread["id"])[-10:]
+    finally:
+        conn.close()
+
+    # 生成 AI 回复（同一会话内多轮上下文）
+    history = []
+    for m in history_rows:
+        role = "user" if m["role"] == "user" else "assistant"
+        history.append({"role": role, "content": m["content"]})
+    try:
+        result = service_bot.run(history, SERVICE_TOOLS)
+        ai_reply = result.get("reply") or ""
+        sources = result.get("sources", [])
+    except Exception:
+        ai_reply = "（AI 暂时无法回答，已转给人工客服，请稍等）"
+        sources = []
+
+    conn = get_conn()
+    try:
+        now = datetime.datetime.now().isoformat(timespec="seconds")
+        with conn:
+            conn.execute(
+                "INSERT INTO service_messages (thread_id, role, sender, content, created_at) "
+                "VALUES (?, 'ai', 'AI 助手', ?, ?)",
+                (thread["id"], ai_reply, now),
+            )
+            conn.execute(
+                "UPDATE service_threads SET updated_at = ? WHERE id = ?", (now, thread["id"])
+            )
+        msgs = _messages(conn, thread["id"])
+    finally:
+        conn.close()
+
+    return {"messages": msgs, "ai_reply": ai_reply, "sources": sources}
 
 
 @app.get("/docs", include_in_schema=False)

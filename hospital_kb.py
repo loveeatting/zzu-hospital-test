@@ -88,7 +88,7 @@ KB = [
         "tags": ["挂号", "怎么预约", "流程", "怎么看医生", "预约流程", "看病的步骤"],
         "content": [
             "1. 线上预约：首页「科室」→ 选科室 → 选医生 → 选时段 → 确认",
-            "2. 到院取号：就诊时段前 15 分钟到一楼自助机或人工窗口取号",
+            "2. 到院取号：就诊时段前 15 分钟到一楼挂号/收费窗口凭预约号取号（无自助取号机）",
             "3. 候诊就诊：按叫号进入对应诊室",
             "4. 结算取药：校医院为医保定点，可刷校园卡或医保电子凭证",
         ],
@@ -300,12 +300,22 @@ def kb_search(query="", category="", limit=3):
     if not query:
         return []
 
+    TIME_INTENT_WORDS = ["几点", "下班", "上班", "开门", "关门", "营业", "门诊时间", "时间"]
+    OUT_OF_SCOPE_WORDS = ["食堂", "图书馆", "超市", "宿舍", "快递", "教室", "澡堂"]
+    out_of_scope = any(w in query for w in OUT_OF_SCOPE_WORDS)
+    time_intent = any(w in query for w in TIME_INTENT_WORDS) and not out_of_scope
+
     scored = []
     for item in pool:
         score = 0
         for tag in item["tags"]:
             if tag in query and tag not in GENERIC_TAGS:
                 score += 3 + len(tag)
+        # 时间意图：即使只说了"几点/下班"这种泛化词，也优先命中门诊时间
+        if time_intent and item["id"] in ("hours", "weekend", "emergency-hours"):
+            score += 6
+        if out_of_scope:
+            score = 0
         if item["title"] in query:
             score += 8
         if score >= SCORE_THRESHOLD:

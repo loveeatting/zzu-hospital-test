@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>客服工作台 · 郑州大学医院</title>
+  <link rel="stylesheet" href="style.css?v=13" />
+  <style>
+    .staff-bar { background: #0b8ea8; color: #fff; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+    .staff-bar b { font-size: 15px; }
+    .staff-bar button { background: rgba(255,255,255,.22); color: #fff; border: 0; padding: 5px 12px; border-radius: 10px; font-size: 12px; }
+    .thread-item { background: #fff; border-radius: 12px; padding: 12px; margin-bottom: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+    .thread-item .row { display: flex; justify-content: space-between; align-items: center; }
+    .unread { background: #d93025; color: #fff; border-radius: 10px; font-size: 11px; padding: 1px 7px; }
+    .msg { margin-bottom: 10px; }
+    .msg .who { font-size: 11px; color: #999; margin-bottom: 3px; }
+    .msg .body { background: #f5f7fa; border-radius: 10px; padding: 9px 12px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+    .msg.me .body { background: #e7f2ff; }
+    .msg.staff .body { background: #e6f7ee; }
+    .badge { font-size: 10px; padding: 1px 6px; border-radius: 8px; margin-left: 6px; }
+    .badge.ai { background: #eef3fd; color: #1a73e8; }
+    .badge.staff { background: #e6f7ee; color: #12a05c; }
+    .badge.user { background: #fff1e6; color: #e8710a; }
+  </style>
+</head>
+<body>
+  <div class="staff-bar">
+    <b>客服工作台</b>
+    <span id="staffWho" style="display:none;"></span>
+    <button id="logoutBtn" style="display:none;">退出</button>
+  </div>
+  <div id="app" class="wrap"></div>
+  <div id="toast" class="toast" hidden></div>
+  <script src="staff.js?v=13"></script>
+</body>
+</html>

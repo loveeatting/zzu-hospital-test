@@ -1165,34 +1165,27 @@ async function renderAllReviews(doctorId, doctorName) {
   }
 }
 
-/* ---------------- AI 前台客服 ---------------- */
+/* ---------------- AI 前台客服（AI + 真人） ---------------- */
 
-const SERVICE_GREETING = '你好，我是校医院咨询助手。可以帮你查门诊时间、此刻谁在值班、医保能报多少、以及挂号退号流程。想问什么？';
+const SERVICE_GREETING = '你好，我是校医院咨询助手。可以帮你查门诊时间、值班医生、医保政策、就诊流程。有哪些我能帮上忙的？';
 
 function renderService() {
-  if (!state.serviceChat) state.serviceChat = [];
-  if (!state.serviceChat.length) {
-    state.serviceChat = [{ role: 'assistant', content: SERVICE_GREETING }];
-  }
   show(`
     <div class="row" style="margin-bottom:12px;">
-      <div class="title">服务咨询</div>
+      <div>
+        <div class="title">服务咨询</div>
+        <div class="sub">AI 即时回答 · 需要人工可留言给客服老师</div>
+      </div>
       <button class="linkbtn" style="background:#eef3fd;color:#1a73e8;" data-action="depts">返回首页</button>
     </div>
-    <div class="chat" id="serviceBox"></div>
+    <div class="chat" id="serviceBox"><div class="loading">加载中…</div></div>
     <div class="chat-bar">
-      <input id="serviceInput" type="text" placeholder="比如：今天谁值班 / 门诊几点下班 / 医保能报多少" />
+      <input id="serviceInput" type="text" placeholder="例如：今天谁值班 / 医保能报多少 / 我要人工客服" />
       <button class="btn" style="width:auto;margin:0;padding:0 18px;" data-action="service-send">发送</button>
     </div>
     <div class="chips" id="serviceChips"></div>
-    <div class="chips">
-      <div class="chip" data-action="kb">查看知识库</div>
-      <div class="chip" data-action="kb-cat" data-text="医保服务">医保政策原文</div>
-      <div class="chip" data-action="kb-cat" data-text="门诊信息">门诊信息</div>
-    </div>
-    <div class="disclaimer">回答带来源标注；标注「未核实」的内容为演示数据，请以医院公告及当年医保政策为准。</div>
+    <div class="disclaimer">带「AI 生成」的是智能助手回复；带「真人回复」的是校医院客服老师的回复。</div>
   `);
-  paintServiceChat();
 
   const input = document.getElementById('serviceInput');
   if (input) {
@@ -1200,66 +1193,45 @@ function renderService() {
       if (e.key === 'Enter') sendService();
     });
   }
+
+  loadServiceThread(true);
+  startServicePoll();
 }
 
-function serviceCardHtml(card) {
-  if (!card || !card.data) return '';
-  const d = card.data;
-  if (card.type === 'get_on_duty_doctors' || card.type === 'on_duty') {
-    const rows = (d.doctors || []).slice(0, 6).map((x) =>
-      `<div class="sub">· ${esc(x.name)}（${esc(x.department)}）${esc(x.period)} ${esc(x.start_time)}-${esc(x.end_time)} · ${esc(x.room)} · 余号 ${x.remain}</div>`
-    ).join('');
-    return `<div class="card" style="margin-top:8px;">
-      <div class="sub" style="margin:0;">${esc(d.now || '')} ${esc(d.status || '')}</div>
-      ${rows || '<div class="sub">暂无排班</div>'}
-      <button class="btn ghost" data-action="depts">去科室看看</button>
-    </div>`;
+async function loadServiceThread(scroll) {
+  try {
+    const data = await api('/api/service/thread');
+    state.threadMsgs = data.messages || [];
+    paintServiceThread(scroll);
+  } catch (e) {
+    const box = document.getElementById('serviceBox');
+    if (box) box.innerHTML = '<div class="err">' + esc(e.message) + '</div>';
   }
-  if (card.type === 'get_hospital_info') {
-    const hours = (d.hours || []).map((h) => `<div class="sub">· ${esc(h)}</div>`).join('');
-    return `<div class="card" style="margin-top:8px;">
-      <div class="sub" style="margin:0;"><b>${esc(d.name || '')}</b></div>
-      ${hours}
-    </div>`;
-  }
-  if (card.type === 'search_insurance' || card.type === 'insurance') {
-    const items = (d.items || []).slice(0, 2).map((it) => `
-      <div style="margin-top:8px;">
-        <div class="sub"><b>${esc(it.title)}</b></div>
-        ${(it.content || []).slice(0, 3).map((c) => `<div class="sub">· ${esc(c)}</div>`).join('')}
-      </div>`).join('');
-    return `<div class="card" style="margin-top:8px;">${items}</div>`;
-  }
-  return '';
 }
 
-function paintServiceChat() {
+function paintServiceThread(scroll) {
   const box = document.getElementById('serviceBox');
   if (!box) return;
-  box.innerHTML = (state.serviceChat || []).map((m) => {
+  const msgs = state.threadMsgs || [];
+
+  box.innerHTML = msgs.length ? msgs.map((m) => {
     const me = m.role === 'user';
-    const extra = me ? '' : serviceCardHtml(m.card);
-    const srcHtml = (!me && m.sources && m.sources.length)
-      ? '<div class="sources">' + m.sources.map((s) =>
-          '<div class="source"><span class="tag ' + (s.verified ? '' : 'gray') + '" style="font-size:11px;">' +
-          (s.verified ? '已核实' : '未核实') + '</span> 来源：' + esc(s.source) + '</div>'
-        ).join('') + '</div>'
-      : '';
-    return `<div class="bubble ${me ? 'me' : ''}">${esc(m.content).replace(/\n/g, '<br/>')}${extra}${srcHtml}</div>`;
-  }).join('');
+    const badge = m.role === 'ai'
+      ? '<span class="badge-ai">AI 生成</span>'
+      : (m.role === 'staff' ? '<span class="badge-staff">真人回复</span>' : '');
+    return '<div class="bubble ' + (me ? 'me' : '') + '">' +
+      '<div class="who">' + esc(m.sender || '') + (badge ? ' ' + badge : '') + '</div>' +
+      esc(m.content).replace(/\n/g, '<br/>') + '</div>';
+  }).join('') : '<div class="bubble">' + esc(SERVICE_GREETING) + '</div>';
 
   const chips = document.getElementById('serviceChips');
-  if (!chips) return;
-  const last = (state.serviceChat || []).filter((m) => m.role === 'assistant').slice(-1)[0];
-  const sugg = (last && last.suggestions) || ['今天谁值班？', '门诊时间？', '医保能报多少？'];
-  chips.innerHTML = sugg.map((s) =>
-    `<div class="chip" data-action="service-suggest" data-text="${esc(s)}">${esc(s)}</div>`
-  ).join('') + '<div class="chip" data-action="service-reset" data-text="">重开对话</div>';
-
-  if (state.serviceBusy) {
-    chips.innerHTML = '<div class="chip">正在查询…</div>' + chips.innerHTML;
+  if (chips) {
+    chips.innerHTML = ['今天谁值班？', '门诊时间？', '医保能报多少？', '我要人工客服']
+      .map((t) => '<div class="chip" data-action="service-suggest" data-text="' + esc(t) + '">' + esc(t) + '</div>')
+      .join('');
   }
-  box.scrollTop = box.scrollHeight;
+
+  if (scroll !== false) box.scrollTop = box.scrollHeight;
 }
 
 async function sendService() {
@@ -1268,29 +1240,44 @@ async function sendService() {
   const text = ((input && input.value) || '').trim();
   if (!text) return;
 
-  state.serviceChat.push({ role: 'user', content: text });
   if (input) input.value = '';
   state.serviceBusy = true;
-  paintServiceChat();
+
+  // 先本地插入用户消息，交互更跟手
+  state.threadMsgs = (state.threadMsgs || []).concat([{ role: 'user', sender: state.student ? state.student.name : '我', content: text }]);
+  paintServiceThread();
 
   try {
-    const history = state.serviceChat
-      .filter((m) => m.role === 'user' || m.role === 'assistant')
-      .slice(-10)
-      .map((m) => ({ role: m.role, content: m.content }));
-    const res = await api('/api/service/chat', { method: 'POST', body: { messages: history } });
-    state.serviceChat.push({
-      role: 'assistant',
-      content: res.reply || '（没有返回内容）',
-      card: res.card || null,
-      sources: res.sources || [],
-      suggestions: res.suggestions || []
-    });
+    const res = await api('/api/service/thread/messages', { method: 'POST', body: { content: text } });
+    state.threadMsgs = res.messages || state.threadMsgs;
+    paintServiceThread();
   } catch (e) {
-    state.serviceChat.push({ role: 'assistant', content: '出错了：' + e.message });
+    toast(e.message);
+    loadServiceThread();
   } finally {
     state.serviceBusy = false;
-    paintServiceChat();
+  }
+}
+
+function startServicePoll() {
+  stopServicePoll();
+  state.serviceTimer = setInterval(async () => {
+    if (!document.getElementById('serviceBox')) { stopServicePoll(); return; }
+    try {
+      const data = await api('/api/service/thread');
+      const now = data.messages || [];
+      if (now.length !== (state.threadMsgs || []).length) {
+        state.threadMsgs = now;
+        paintServiceThread();
+      }
+    } catch (e) { /* ignore */ }
+  }, 5000);
+}
+
+function stopServicePoll() {
+  if (state.serviceTimer) {
+    clearInterval(state.serviceTimer);
+    state.serviceTimer = null;
   }
 }
 

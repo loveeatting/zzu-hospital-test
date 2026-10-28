@@ -312,3 +312,14 @@ textarea { min-height: 110px; resize: vertical; line-height: 1.7; }
   .tile-title { font-size: 12px; }
   .tile-desc { font-size: 9px; }
 }
+
+/* ---------- 客服消息角色标识 ---------- */
+.bubble .who { font-size: 11px; color: #999; margin-bottom: 4px; }
+.badge-ai {
+  background: #eef3fd; color: #1a73e8; font-size: 10px;
+  padding: 1px 6px; border-radius: 8px; margin-left: 4px;
+}
+.badge-staff {
+  background: #e6f7ee; color: #12a05c; font-size: 10px;
+  padding: 1px 6px; border-radius: 8px; margin-left: 4px;
+}
