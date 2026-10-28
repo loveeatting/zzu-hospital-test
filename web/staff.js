@@ -96,6 +96,7 @@ async function doLogin() {
   try {
     const res = await api('/api/staff/login', { method: 'POST', body: { username: u, password: p } });
     saveSession(res.token, res.staff);
+    startWatch();
     renderThreads();
   } catch (e) {
     err.textContent = e.message;
@@ -106,6 +107,39 @@ function renderChrome() {
   staffWho.style.display = S.staff ? 'inline' : 'none';
   staffWho.textContent = S.staff ? (S.staff.name + ' · ' + S.staff.username) : '';
   logoutBtn.style.display = S.staff ? 'inline' : 'none';
+}
+
+function startWatch() {
+  if (S.timer) clearInterval(S.timer);
+  S.timer = setInterval(async () => {
+    if (!S.token) return;
+    const prevUnread = (S.threads || []).reduce((a, t) => a + (t.unread_staff || 0), 0);
+    try {
+      const list = await api('/api/staff/threads');
+      const unread = list.reduce((a, t) => a + (t.unread_staff || 0), 0);
+      document.title = (unread > 0 ? '(' + unread + ') ' : '') + '客服工作台 · 郑州大学医院';
+
+      const onList = !!document.getElementById('refreshBtn');
+      S.threads = list;
+
+      if (onList) {
+        if (unread !== prevUnread) renderThreads();
+        return;
+      }
+
+      if (unread > prevUnread) {
+        toast('有新消息，当前未读 ' + unread + ' 条');
+      }
+      if (S.current) {
+        const detail = await api('/api/staff/threads/' + S.current);
+        const n = (detail.messages || []).length;
+        if (n !== S.messages.length) {
+          S.messages = detail.messages || [];
+          paintThread(detail.thread);
+        }
+      }
+    } catch (e) { /* 忽略瞬时错误 */ }
+  }, 6000);
 }
 
 async function renderThreads() {
@@ -138,10 +172,7 @@ async function renderThreads() {
     });
     document.getElementById('refreshBtn').addEventListener('click', renderThreads);
 
-    if (S.timer) clearInterval(S.timer);
-    S.timer = setInterval(() => {
-      if (document.getElementById('refreshBtn')) renderThreads();
-    }, 8000);
+    startWatch();
   } catch (e) {
     app.innerHTML = `<div class="card"><div class="err">${esc(e.message)}</div>
       <button class="btn" id="retry">重试</button></div>`;
@@ -197,17 +228,7 @@ function paintThread(thread) {
     if (e.key === 'Enter') sendReply();
   });
 
-  if (S.timer) clearInterval(S.timer);
-  S.timer = setInterval(async () => {
-    if (!document.getElementById('chatBox') || !S.current) return;
-    try {
-      const detail = await api('/api/staff/threads/' + S.current);
-      if ((detail.messages || []).length !== S.messages.length) {
-        S.messages = detail.messages || [];
-        paintThread(detail.thread);
-      }
-    } catch (e) { /* ignore */ }
-  }, 5000);
+  startWatch();
 }
 
 async function sendReply() {
@@ -238,6 +259,7 @@ logoutBtn.addEventListener('click', () => {
 });
 
 if (S.token && S.staff) {
+  startWatch();
   renderThreads();
 } else {
   renderLogin();

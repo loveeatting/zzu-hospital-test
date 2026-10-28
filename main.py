@@ -926,6 +926,46 @@ def hospital_flow():
 def service_chat(req: ServiceChatRequest, student=Depends(current_student)):
     messages = [{"role": m.role, "content": m.content} for m in req.messages]
     result = service_bot.run(messages, SERVICE_TOOLS)
+
+    # 兼容旧版前端：把这一轮对话也记录到客服会话，避免客服端看不到
+    try:
+        last_user = ""
+        for m in reversed(req.messages):
+            if m.role == "user":
+                last_user = m.content
+                break
+        if last_user:
+            now = datetime.datetime.now().isoformat(timespec="seconds")
+            conn2 = get_conn()
+            try:
+                with conn2:
+                    thread = _thread_for_student(conn2, student["student_no"])
+                    exists = conn2.execute(
+                        "SELECT id FROM service_messages WHERE thread_id = ? AND role = 'user' "
+                        "AND content = ? ORDER BY id DESC LIMIT 1",
+                        (thread["id"], last_user),
+                    ).fetchone()
+                    if exists is None:
+                        conn2.execute(
+                            "INSERT INTO service_messages (thread_id, role, sender, content, created_at) "
+                            "VALUES (?, 'user', ?, ?, ?)",
+                            (thread["id"], student["name"], last_user, now),
+                        )
+                    conn2.execute(
+                        "INSERT INTO service_messages (thread_id, role, sender, content, created_at) "
+                        "VALUES (?, 'ai', 'AI 助手', ?, ?)",
+                        (thread["id"], result.get("reply") or "", now),
+                    )
+                    conn2.execute(
+                        "UPDATE service_threads SET updated_at = ?, unread_staff = unread_staff + 1 "
+                        "WHERE id = ?",
+                        (now, thread["id"]),
+                    )
+            finally:
+                conn2.close()
+    except Exception:
+        pass
+
     return {
         "reply": result.get("reply", ""),
         "card": result.get("card"),
@@ -1117,7 +1157,9 @@ def staff_login(req: StaffLoginRequest):
 
         token = secrets.token_hex(16)
         with conn:
-            conn.execute("DELETE FROM staff_sessions WHERE staff_id = ?", (row["id"],))
+            # 客服允许同一账号在多台设备登录（与学生的单设备互斥策略不同）
+            conn.execute("DELETE FROM staff_sessions WHERE created_at < ?",
+                         ((datetime.datetime.now() - datetime.timedelta(days=7)).isoformat(timespec="seconds"),))
             conn.execute(
                 "INSERT INTO staff_sessions (token, staff_id, created_at) VALUES (?, ?, ?)",
                 (token, row["id"],
