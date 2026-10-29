@@ -1414,7 +1414,7 @@ function navRoomForDept(name) {
 /* 上层楼层布局：照 2F/3F/4F 消防疏散图，U 形走廊（北排 + 西侧 + 南排 + 东侧 + 中部楼电梯） */
 const NAV_UPPER = {
   2: {
-    north: ['213', '214', '215', '216', '217', '218', '219', '220', '211', '202', '222', '223', '224'],
+    north: ['213', '214', '215', '216', '217', '218', '219', '220', '211', '楼梯', '222', '223', '224'],
     west: ['212', '212', '114'],
     south: ['211', '210', '209', '208', '207', '206', '205', '204', '203'],
     east: ['210', '210', '202'],
@@ -1448,7 +1448,7 @@ function navUpperRooms(floor) {
   cfg.north.forEach(function (label, idx) {
     rooms.push({
       id: 'n' + idx, label: label, x: nX0 + idx * (nW + nGap), y: nY, w: nW, h: nH,
-      kind: label === '电梯' ? 'lift' : 'room', side: 'north'
+      kind: label === '电梯' ? 'lift' : (label === '楼梯' ? 'stairs' : 'room'), side: 'north'
     });
   });
 
@@ -1494,7 +1494,10 @@ function navUpperRooms(floor) {
 }
 
 function navLift(rooms) {
-  return rooms.filter(function (r) { return r.kind === 'lift'; })[0] || null;
+  return rooms.filter(function (r) { return r.kind === 'lift'; })[0]
+    || rooms.filter(function (r) { return r.kind === 'stairs'; })[0]
+    || rooms.filter(function (r) { return r.side === 'center'; })[0]
+    || null;
 }
 
 function navSvgFloor(floor, target, roomNo) {
