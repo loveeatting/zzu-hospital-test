@@ -679,7 +679,8 @@ document.addEventListener('click', (ev) => {
     case 'guide': renderGuide(); break;
     case 'access': renderAccess(); break;
     case 'nav': renderNav(''); break;
-    case 'nav-dept': renderNav(el.dataset.name || ''); break;
+    case 'nav-dept': renderNav(el.dataset.name || '', 1, ''); break;
+    case 'nav-floor': renderNav(el.dataset.name || '', Number(el.dataset.floor) || 1, ''); break;
     case 'dept':
       renderDoctors({ id: el.dataset.id, name: el.dataset.name });
       break;
@@ -1358,112 +1359,211 @@ async function renderKbItem(id) {
   }
 }
 
-/* ---------------- 院内导航 ---------------- */
+/* ---------------- 院内导航（按平面图绘制） ---------------- */
 
-const NAV_SHORT = {
-  dental: '口腔区',
-  clinic: '门诊区',
-  imaging: '医技区',
-  emergency: '急诊药房',
-  vaccine: '接种区'
-};
+/* 一楼房间布局：坐标参考门诊楼一楼平面图（0-340 x 0-250 画布） */
+const NAV_F1 = [
+  { id: 'dental',   label: '口腔科',      x: 16,  y: 44,  w: 36,  h: 96, depts: ['口腔科'] },
+  { id: 'cbc',      label: 'CBC牙片室',   x: 56,  y: 44,  w: 28,  h: 26, depts: ['口腔科'] },
+  { id: 'derm_t',   label: '皮肤科治疗室', x: 86,  y: 44,  w: 30,  h: 26, depts: ['皮肤科'] },
+  { id: 'derm',     label: '皮肤科',      x: 118, y: 44,  w: 22,  h: 26, depts: ['皮肤科'] },
+  { id: 'eye_c',    label: '眼科检查室',   x: 142, y: 44,  w: 28,  h: 26, depts: ['眼科'] },
+  { id: 'eye',      label: '眼科',        x: 172, y: 44,  w: 20,  h: 26, depts: ['眼科'] },
+  { id: 'surg1',    label: '外科1',       x: 194, y: 44,  w: 20,  h: 26, depts: ['外科'] },
+  { id: 'surg2',    label: '外科2',       x: 216, y: 44,  w: 20,  h: 26, depts: ['外科'] },
+  { id: 'dressing', label: '换药室',      x: 238, y: 44,  w: 22,  h: 26, depts: ['外科'] },
+  { id: 'equip',    label: '设备间',      x: 262, y: 44,  w: 20,  h: 26, depts: [] },
+  { id: 'gyn',      label: '妇科',        x: 284, y: 44,  w: 18,  h: 26, depts: ['妇科'] },
+  { id: 'stairs_n', label: '楼梯',        x: 304, y: 44,  w: 18,  h: 26, depts: [] },
+  { id: 'tcm_t',    label: '中医治疗室',   x: 36,  y: 146, w: 34,  h: 26, depts: ['康复理疗科（疼痛科）'] },
+  { id: 'elev1',    label: '电梯',        x: 72,  y: 146, w: 20,  h: 26, depts: [] },
+  { id: 'cashier',  label: '收费室',      x: 94,  y: 146, w: 26,  h: 26, depts: [] },
+  { id: 'garden',   label: '中心花园',     x: 124, y: 96,  w: 76,  h: 44, depts: [] },
+  { id: 'wc_f',     label: '女卫生间',     x: 16,  y: 178, w: 24,  h: 26, depts: [] },
+  { id: 'wc_m',     label: '男卫生间',     x: 42,  y: 178, w: 24,  h: 26, depts: [] },
+  { id: 'pharmacy', label: '药房',        x: 122, y: 178, w: 44,  h: 26, depts: [] },
+  { id: 'med1',     label: '内科1',       x: 176, y: 178, w: 22,  h: 26, depts: ['内科'] },
+  { id: 'emerg',    label: '急诊室',      x: 200, y: 178, w: 22,  h: 26, depts: [] },
+  { id: 'tcm',      label: '中医科',      x: 224, y: 178, w: 22,  h: 26, depts: ['中医科'] },
+  { id: 'infusion', label: '输液室',      x: 248, y: 178, w: 24,  h: 26, depts: [] },
+  { id: 'ct',       label: 'CT机房',      x: 248, y: 100, w: 30,  h: 22, depts: ['放射科'] },
+  { id: 'ct_d',     label: 'CT诊断室',    x: 248, y: 124, w: 30,  h: 22, depts: ['放射科'] },
+  { id: 'dr',       label: 'DR机房',      x: 280, y: 100, w: 30,  h: 22, depts: ['放射科'] },
+  { id: 'dr_d',     label: 'DR诊断室',    x: 280, y: 124, w: 30,  h: 22, depts: [] },
+  { id: 'gi',       label: '胃肠机房',     x: 280, y: 148, w: 30,  h: 22, depts: [] },
+  { id: 'imaging',  label: '医学影像科',   x: 248, y: 148, w: 30,  h: 22, depts: ['超声科'] }
+];
 
-async function renderNav(deptName) {
-  show('<div class="loading">加载中…</div>');
-  try {
-    const map = await api('/api/hospital/nav/areas');
-    const depts = await api('/api/departments');
-    let nav = null;
-    if (deptName) {
-      nav = await api('/api/hospital/nav?dept=' + encodeURIComponent(deptName));
-    }
-    paintNav(map, depts, nav);
-  } catch (e) {
-    show('<div class="card"><div class="err">' + esc(e.message) + '</div>' +
-      '<button class="btn" data-action="depts">返回首页</button></div>');
+/* 大门（入口） */
+const NAV_GATE = { id: 'gate', label: '大门', x: 150, y: 212, w: 46, h: 20 };
+
+/* 科室 → 一楼房间（找不到则返回空） */
+function navRoomForDept(name) {
+  if (!name) return null;
+  for (const r of NAV_F1) {
+    if ((r.depts || []).indexOf(name) >= 0) return r;
   }
+  for (const r of NAV_F1) {
+    for (const d of (r.depts || [])) {
+      if (name.indexOf(d) >= 0 || d.indexOf(name) >= 0) return r;
+    }
+  }
+  return null;
 }
 
-function navSvg(map, targetKey) {
-  const areas = (map.areas || []).map(function (a) {
-    const on = a.key === targetKey;
-    const r = a.rect;
-    return '<g>' +
-      '<rect x="' + r[0] + '" y="' + r[1] + '" width="' + r[2] + '" height="' + r[3] +
-      '" rx="6" fill="' + (on ? '#1a73e8' : '#eef3fd') + '" stroke="' + (on ? '#1a73e8' : '#c8d8f0') + '" stroke-width="1"/>' +
-      '<text x="' + (r[0] + r[2] / 2) + '" y="' + (r[1] + r[3] / 2 + 3) + '" text-anchor="middle" ' +
-      'font-size="8" fill="' + (on ? '#fff' : '#5b7bb0') + '" font-weight="' + (on ? '700' : '400') + '">' +
-      esc(NAV_SHORT[a.key] || a.name) + '</text></g>';
-  }).join('');
+/* 上层楼层：按消防疏散图的房间号生成网格 */
+function navUpperRooms(floor) {
+  const cfg = {
+    2: { prefix: '2', count: 26, start: 201 },
+    3: { prefix: '3', count: 24, start: 301 },
+    4: { prefix: '4', count: 26, start: 401 }
+  }[floor];
+  const rooms = [];
+  const perRow = 7;
+  const w = 36, h = 26, gapX = 4, gapY = 12;
+  const x0 = 20, y0 = 34;
+  for (let i = 0; i < cfg.count; i++) {
+    const col = i % perRow;
+    const row = Math.floor(i / perRow);
+    rooms.push({
+      id: 'r' + (cfg.start + i),
+      label: String(cfg.start + i),
+      x: x0 + col * (w + gapX),
+      y: y0 + row * (h + gapY),
+      w: w, h: h, depts: []
+    });
+  }
+  return rooms;
+}
 
-  const lm = map.landmarks || {};
-  function mark(m, fill, color) {
-    if (!m) return '';
-    const r = m.rect;
-    return '<g><rect x="' + r[0] + '" y="' + r[1] + '" width="' + r[2] + '" height="' + r[3] +
-      '" rx="4" fill="' + fill + '" stroke="none"/>' +
-      '<text x="' + (r[0] + r[2] / 2) + '" y="' + (r[1] + r[3] / 2 + 3) +
-      '" text-anchor="middle" font-size="7" fill="' + color + '">' + esc(m.label) + '</text></g>';
+function navSvgFloor(floor, target, roomNo) {
+  const isF1 = floor === 1;
+  const rooms = isF1 ? NAV_F1 : navUpperRooms(floor);
+  const gate = isF1 ? NAV_GATE : { id: 'elev', label: '电梯', x: 150, y: 196, w: 46, h: 22 };
+
+  let targetRect = null;
+  if (isF1 && target && target.room) {
+    targetRect = target.room;
+  } else if (!isF1 && roomNo) {
+    targetRect = rooms.filter(function (r) { return r.label === String(roomNo); })[0] || null;
   }
 
-  return '<svg viewBox="0 0 324 236" class="navmap" xmlns="http://www.w3.org/2000/svg">' +
-    '<rect x="0" y="0" width="324" height="236" fill="#f7f9fc" rx="10"/>' +
-    areas +
-    mark(lm.garden, '#e6f7ee', '#12a05c') +
-    mark(lm.elevator, '#eeeeee', '#777') +
-    mark(lm.gate, '#d93025', '#fff') +
+  const cells = rooms.map(function (r) {
+    const on = targetRect && r.id === targetRect.id;
+    return '<g>' +
+      '<rect x="' + r.x + '" y="' + r.y + '" width="' + r.w + '" height="' + r.h +
+      '" rx="3" fill="' + (on ? '#e8710a' : '#e8eef8') + '" stroke="' + (on ? '#c85f00' : '#c3d2e8') + '"/>' +
+      '<text x="' + (r.x + r.w / 2) + '" y="' + (r.y + r.h / 2 + 3) + '" text-anchor="middle" font-size="' +
+      (r.label.length > 4 ? 6 : 7) + '" fill="' + (on ? '#fff' : '#5b7bb0') + '">' + esc(r.label) + '</text>' +
+      '</g>';
+  }).join('');
+
+  // 大门/电梯 高亮
+  const gateSvg = '<g>' +
+    '<rect x="' + gate.x + '" y="' + gate.y + '" width="' + gate.w + '" height="' + gate.h +
+    '" rx="3" fill="#d93025"/>' +
+    '<text x="' + (gate.x + gate.w / 2) + '" y="' + (gate.y + gate.h / 2 + 3) +
+    '" text-anchor="middle" font-size="7" fill="#fff">' + esc(gate.label) + '</text></g>';
+
+  // 路线：大门 → 通道 → 目标
+  let path = '';
+  if (targetRect) {
+    const gx = gate.x + gate.w / 2;
+    const gy = gate.y;
+    const tx = targetRect.x + targetRect.w / 2;
+    const ty = targetRect.y + targetRect.h;
+    const midY = isF1 ? 168 : 176;
+    const pts = [[gx, gy], [gx, midY], [tx, midY], [tx, ty]];
+    path = '<polyline points="' + pts.map(function (p) { return p[0] + ',' + p[1]; }).join(' ') +
+      '" fill="none" stroke="#1a73e8" stroke-width="2.4" stroke-dasharray="6 4" stroke-linejoin="round"/>' +
+      '<circle cx="' + tx + '" cy="' + ty + '" r="3.2" fill="#1a73e8"/>';
+  }
+
+  return '<svg viewBox="0 0 340 244" class="navmap">' +
+    '<rect x="0" y="0" width="340" height="244" fill="#f7f9fc" rx="10"/>' +
+    cells + gateSvg + path +
     '</svg>';
 }
 
-function paintNav(map, depts, nav) {
-  const targetKey = nav && nav.area ? nav.area.key : null;
-  const options = depts.map(function (d) {
-    const sel = nav && nav.dept === d.name ? ' selected' : '';
-    return '<option value="' + esc(d.name) + '"' + sel + '>' + esc(d.name) + '</option>';
+function navSteps(floor, target, roomNo) {
+  const isF1 = floor === 1;
+  if (isF1) {
+    if (!target || !target.room) {
+      return ['该科室在一楼平面图上没有标注具体房间', '请到一楼导诊台确认位置', '或按院内指示牌前往'];
+    }
+    const area = target.room.label;
+    return ['从大门进入门诊楼', '沿主通道直行（见图蓝色虚线）', '按指示牌前往「' + area + '」', '到达后到分诊台报到候诊'];
+  }
+  if (!roomNo) return ['先在上方输入房间号（如 ' + (floor === 2 ? '215' : (floor === 3 ? '315' : '415')) + '）'];
+  return ['从一楼乘电梯 / 楼梯上到 ' + floor + ' 楼', '出电梯后沿走廊按房间号寻找 ' + roomNo + ' 室', '具体科室以该层指示牌为准'];
+}
+
+function renderNav(deptName, floor, roomNo) {
+  const f = floor || 1;
+  const name = deptName || '';
+  const target = f === 1 ? (name ? { room: navRoomForDept(name) } : null) : null;
+  const foundRoom = target && target.room;
+
+  const tabs = [1, 2, 3, 4].map(function (x) {
+    return '<div class="nav-tab ' + (x === f ? 'on' : '') + '" data-action="nav-floor" data-floor="' + x +
+      '" data-name="' + esc(name) + '">' + (x === 1 ? '一楼' : x + ' 楼') + '</div>';
   }).join('');
 
-  const steps = nav ? nav.steps.map(function (s, i) {
-    return '<div class="nav-step"><span class="nav-num">' + (i + 1) + '</span>' + esc(s) + '</div>';
-  }).join('') : '';
+  const deptSelect = f === 1
+    ? '<select id="navSelect" class="nav-select"><option value="">选择科室…</option>' +
+      NAV_DEPT_OPTIONS(name) + '</select>'
+    : '<input id="navRoom" class="nav-select" placeholder="输入房间号，如 ' + (f === 2 ? '215' : (f === 3 ? '315' : '415')) +
+      '" value="' + esc(roomNo || '') + '" />';
 
-  const header = nav
-    ? '<div class="card"><div class="row"><div class="title">' + esc(nav.dept) + '</div>' +
-      '<div class="tag ' + (nav.found ? 'green' : 'gray') + '">' + (nav.found ? '已定位' : '未标注') + '</div></div>' +
-      '<div class="sub">楼层：' + esc(nav.floor) + (nav.area ? ' · 区域：' + esc(nav.area.name) : '') + '</div></div>'
-    : '<div class="card"><div class="sub" style="margin:0;">先选择你要去的科室，我会给出从大门出发的路线。</div></div>';
+  const steps = navSteps(f, target, roomNo).map(function (s, i) {
+    return '<div class="nav-step"><span class="nav-num">' + (i + 1) + '</span>' + esc(s) + '</div>';
+  }).join('');
 
   show(`
     <div class="row" style="margin-bottom:10px;">
       <div class="title">院内导航</div>
       <button class="linkbtn" style="background:#eef3fd;color:#1a73e8;" data-action="access">返回来院指引</button>
     </div>
+    <div class="nav-tabs">${tabs}</div>
     <div class="card">
-      <div class="sub" style="margin:0 0 8px;">选择科室</div>
-      <select id="navSelect" class="nav-select">
-        <option value="">请选择科室…</option>
-        ${options}
-      </select>
+      ${deptSelect}
+      ${f === 1 && name ? '<div class="sub" style="margin-top:8px;color:' + (foundRoom ? '#12a05c' : '#e8710a') + ';">' +
+        (foundRoom ? '目标：' + esc(foundRoom.label) + '（橙色高亮）' : '该科室在一楼图上未标注，请到导诊台确认') + '</div>' : ''}
+      ${f !== 1 ? '<div class="sub" style="margin-top:8px;">该楼层平面图仅标注房间号，按号码寻找</div>' : ''}
     </div>
-    ${header}
     <div class="card">
-      <div class="sub" style="margin:0 0 8px;">一楼示意图（依据院内平面图）</div>
-      ${navSvg(map, targetKey)}
+      ${navSvgFloor(f, target, roomNo)}
       <div class="nav-legend">
-        <span><i style="background:#1a73e8"></i>目的地</span>
-        <span><i style="background:#d93025"></i>大门</span>
-        <span><i style="background:#e6f7ee;border:1px solid #12a05c"></i>中心花园</span>
-        <span><i style="background:#eeeeee;border:1px solid #bbb"></i>电梯</span>
+        <span><i style="background:#e8710a"></i>目标</span>
+        <span><i style="background:#d93025"></i>大门/电梯</span>
+        <span><i style="background:#1a73e8"></i>路线</span>
       </div>
     </div>
-    ${nav ? '<div class="card"><div class="sub" style="margin:0 0 8px;">步行路线</div>' + steps + '</div>' : ''}
-    <div class="disclaimer">${esc(nav ? (nav.note || '') : '路线依据一楼平面图的相对位置整理，具体诊室号请以院内指示牌为准。')}</div>
+    <div class="card"><div class="sub" style="margin:0 0 8px;">路线指引</div>${steps}</div>
+    <div class="disclaimer">楼层图依据院内一楼平面图与各层疏散图绘制，房间以现场指示牌为准。</div>
   `);
 
   const sel = document.getElementById('navSelect');
   if (sel) {
-    sel.addEventListener('change', function () {
-      if (sel.value) renderNav(sel.value);
+    sel.value = name || '';
+    sel.addEventListener('change', function () { renderNav(sel.value, 1, ''); });
+  }
+  const inp = document.getElementById('navRoom');
+  if (inp) {
+    inp.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') renderNav('', f, (inp.value || '').trim());
+    });
+    inp.addEventListener('blur', function () {
+      if ((inp.value || '').trim()) renderNav('', f, (inp.value || '').trim());
     });
   }
 }
 
+function NAV_DEPT_OPTIONS(cur) {
+  const names = ['内科', '外科', '口腔科', '皮肤科', '眼科', '耳鼻咽喉科',
+    '康复理疗科（疼痛科）', '妇科', '中医科', '超声科', '检验科', '放射科',
+    '体检科', '成人预防接种门诊'];
+  return names.map(function (n) {
+    return '<option value="' + esc(n) + '"' + (n === cur ? ' selected' : '') + '>' + esc(n) + '</option>';
+  }).join('');
+}

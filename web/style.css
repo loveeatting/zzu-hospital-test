@@ -371,3 +371,25 @@ textarea { min-height: 110px; resize: vertical; line-height: 1.7; }
   margin-right: 4px;
   vertical-align: middle;
 }
+
+/* ---------- 导航楼层页签 ---------- */
+.nav-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.nav-tab {
+  flex: 1;
+  text-align: center;
+  padding: 8px 0;
+  background: #fff;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #666;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+.nav-tab.on {
+  background: #1a73e8;
+  color: #fff;
+  font-weight: 600;
+}
