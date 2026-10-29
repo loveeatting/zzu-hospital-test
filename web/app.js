@@ -326,42 +326,10 @@ async function renderGuide() {
 
 /* ---------------- 来院指引（交通 + 楼层分布） ---------------- */
 
-async function renderAccess(deptName, floor, roomNo, start) {
-  const f = floor || 1;
-  const name = deptName || '';
-  const st = start || 'lift';
-  const room = roomNo || '';
+async function renderAccess() {
   show('<div class="loading">加载中…</div>');
   try {
     const data = await api('/api/hospital/access');
-    const target = f === 1 ? (name ? { room: navRoomForDept(name) } : null) : null;
-    const foundRoom = target && target.room;
-
-    // ---- 顶部：院内导航 ----
-    const tabs = [1, 2, 3, 4].map(function (x) {
-      return '<div class="nav-tab ' + (x === f ? 'on' : '') + '" data-action="access-floor" data-floor="' + x +
-        '" data-name="' + esc(name) + '" data-room="' + esc(x === f ? room : '') + '" data-start="' + st + '">' +
-        (x === 1 ? '一楼' : x + ' 楼') + '</div>';
-    }).join('');
-
-    const startChips = f === 1 ? '' :
-      '<div class="chips" style="margin:6px 0 0;">' +
-      ['lift', 'stair1', 'stair2'].map(function (k) {
-        return '<div class="chip ' + (k === st ? 'on' : '') + '" data-action="access-start" data-start="' + k +
-          '" data-floor="' + f + '" data-name="' + esc(name) + '" data-room="' + esc(room) + '">' +
-          NAV_START_NAME[k] + '</div>';
-      }).join('') + '</div>';
-
-    const picker = f === 1
-      ? '<select id="navSelect" class="nav-select"><option value="">选择科室…</option>' + NAV_DEPT_OPTIONS(name) + '</select>'
-      : '<input id="navRoom" class="nav-select" placeholder="输入房间号，如 ' +
-        (f === 2 ? '215' : (f === 3 ? '315' : '415')) + '" value="' + esc(room) + '" />';
-
-    const steps = navSteps(f, target, room, st).map(function (line, i2) {
-      return '<div class="nav-step"><span class="nav-num">' + (i2 + 1) + '</span>' + esc(line) + '</div>';
-    }).join('');
-
-    // ---- 下方：楼层分布 ----
     const floors = (data.floors || []).map(function (fl) {
       return '<div class="card"><div class="date-title">' + esc(fl.floor) + '</div>' +
         (fl.items || []).map(function (it) { return '<div class="sub">· ' + esc(it) + '</div>'; }).join('') +
@@ -375,46 +343,25 @@ async function renderAccess(deptName, floor, roomNo, start) {
         <button class="linkbtn" style="background:#eef3fd;color:#1a73e8;" data-action="depts">返回首页</button>
       </div>
 
-      <div class="card">
-        <div class="date-title">院内导航</div>
-        <div class="nav-tabs">${tabs}</div>
-        ${picker}
-        ${f === 1
-          ? (name ? '<div class="sub" style="margin-top:8px;color:' + (foundRoom ? '#12a05c' : '#e8710a') + ';">' +
-              (foundRoom ? '目标：' + esc(foundRoom.label) + '（橙色高亮）' : '该科室在一楼图上未标注，请到导诊台确认') + '</div>' : '')
-          : '<div class="sub" style="margin-top:8px;">起点</div>' + startChips}
-        <div style="margin-top:8px;">${navSvgFloor(f, target, room, st)}</div>
-        <div class="nav-legend">
-          <span><i style="background:#e8710a"></i>目标</span>
-          <span><i style="background:#d93025"></i>大门/电梯</span>
-          <span><i style="background:#ffd8a8;border:1px solid #e8a33d"></i>步梯</span>
-          <span><i style="background:#1a73e8"></i>路线</span>
+      <div class="card tap" data-action="nav">
+        <div class="row">
+          <div>
+            <div class="title">院内导航</div>
+            <div class="sub">选择科室或房间号，看平面图与步行路线</div>
+          </div>
+          <div class="arrow">›</div>
         </div>
       </div>
 
-      <div class="card"><div class="sub" style="margin:0 0 8px;">路线指引</div>${steps}</div>
-
       <div class="card"><div class="date-title">${esc(data.name || '')}</div>
         <div class="sub">${esc(data.address || '')}</div></div>
+
+      <div class="date-title" style="margin:14px 0 8px;">楼层与科室分布</div>
       ${floors}
+
       <div class="card"><div class="date-title">就诊提示</div>${tips}</div>
       <div class="disclaimer">${esc(data.note || '')}</div>
     `);
-
-    const sel = document.getElementById('navSelect');
-    if (sel) {
-      sel.value = name || '';
-      sel.addEventListener('change', function () { renderAccess(sel.value, 1, '', st); });
-    }
-    const inp = document.getElementById('navRoom');
-    if (inp) {
-      inp.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') renderAccess('', f, (inp.value || '').trim(), st);
-      });
-      inp.addEventListener('blur', function () {
-        if ((inp.value || '').trim()) renderAccess('', f, (inp.value || '').trim(), st);
-      });
-    }
   } catch (e) {
     show('<div class="card"><div class="err">' + esc(e.message) + '</div>' +
       '<button class="btn" data-action="depts">返回首页</button></div>');
@@ -738,11 +685,11 @@ document.addEventListener('click', (ev) => {
     case 'experts': renderExperts(); break;
     case 'guide': renderGuide(); break;
     case 'access': renderAccess(); break;
-    case 'nav': renderAccess('', 1, '', 'lift'); break;
-    case 'nav-dept': renderAccess(el.dataset.name || '', 1, '', 'lift'); break;
-    case 'nav-floor': renderAccess(el.dataset.name || '', Number(el.dataset.floor) || 1, '', el.dataset.start || 'lift'); break;
-    case 'access-floor': renderAccess(el.dataset.name || '', Number(el.dataset.floor) || 1, el.dataset.room || '', el.dataset.start || 'lift'); break;
-    case 'access-start': renderAccess(el.dataset.name || '', Number(el.dataset.floor) || 1, el.dataset.room || '', el.dataset.start || 'lift'); break;
+    case 'nav': renderNavPage('', 1, '', 'lift'); break;
+    case 'nav-dept': renderNavPage(el.dataset.name || '', 1, '', 'lift'); break;
+    case 'nav-floor': renderNavPage(el.dataset.name || '', Number(el.dataset.floor) || 1, '', el.dataset.start || 'lift'); break;
+    case 'access-floor': renderNavPage(el.dataset.name || '', Number(el.dataset.floor) || 1, el.dataset.room || '', el.dataset.start || 'lift'); break;
+    case 'access-start': renderNavPage(el.dataset.name || '', Number(el.dataset.floor) || 1, el.dataset.room || '', el.dataset.start || 'lift'); break;
     case 'nav-start': renderNav(el.dataset.name || '', Number(el.dataset.floor) || 1, el.dataset.room || '', el.dataset.start || 'lift'); break;
     case 'dept':
       renderDoctors({ id: el.dataset.id, name: el.dataset.name });
@@ -1728,3 +1675,78 @@ function renderNav(deptName, floor, roomNo, start) {
     });
   }
 }
+
+
+/* ---------------- 院内导航页（从「来院指引」进入） ---------------- */
+
+async function renderNavPage(deptName, floor, roomNo, start) {
+  const f = floor || 1;
+  const name = deptName || '';
+  const st = start || 'lift';
+  const room = roomNo || '';
+  const target = f === 1 ? (name ? { room: navRoomForDept(name) } : null) : null;
+  const foundRoom = target && target.room;
+
+  const tabs = [1, 2, 3, 4].map(function (x) {
+    return '<div class="nav-tab ' + (x === f ? 'on' : '') + '" data-action="nav-floor" data-floor="' + x +
+      '" data-name="' + esc(name) + '" data-room="' + esc(x === f ? room : '') + '" data-start="' + st + '">' +
+      (x === 1 ? '一楼' : x + ' 楼') + '</div>';
+  }).join('');
+
+  const startChips = f === 1 ? '' :
+    '<div class="chips" style="margin:6px 0 0;">' +
+    ['lift', 'stair1', 'stair2'].map(function (k) {
+      return '<div class="chip ' + (k === st ? ' on' : '') + '" data-action="nav-start" data-start="' + k +
+        '" data-floor="' + f + '" data-name="' + esc(name) + '" data-room="' + esc(room) + '">' +
+        NAV_START_NAME[k] + '</div>';
+    }).join('') + '</div>';
+
+  const picker = f === 1
+    ? '<select id="navSelect" class="nav-select"><option value="">选择科室…</option>' + NAV_DEPT_OPTIONS(name) + '</select>'
+    : '<input id="navRoom" class="nav-select" placeholder="输入房间号，如 ' +
+      (f === 2 ? '215' : (f === 3 ? '315' : '415')) + '" value="' + esc(room) + '" />';
+
+  const steps = navSteps(f, target, room, st).map(function (line, i2) {
+    return '<div class="nav-step"><span class="nav-num">' + (i2 + 1) + '</span>' + esc(line) + '</div>';
+  }).join('');
+
+  show(`
+    <div class="row" style="margin-bottom:10px;">
+      <div class="title">院内导航</div>
+      <button class="linkbtn" style="background:#eef3fd;color:#1a73e8;" data-action="access">返回来院指引</button>
+    </div>
+    <div class="card">
+      <div class="nav-tabs">${tabs}</div>
+      ${picker}
+      ${f === 1
+        ? (name ? '<div class="sub" style="margin-top:8px;color:' + (foundRoom ? '#12a05c' : '#e8710a') + ';">' +
+            (foundRoom ? '目标：' + esc(foundRoom.label) + '（橙色高亮）' : '该科室在一楼图上未标注，请到导诊台确认') + '</div>' : '')
+        : '<div class="sub" style="margin-top:8px;">起点</div>' + startChips}
+      <div style="margin-top:8px;">${navSvgFloor(f, target, room, st)}</div>
+      <div class="nav-legend">
+        <span><i style="background:#e8710a"></i>目标</span>
+        <span><i style="background:#d93025"></i>大门/电梯</span>
+        <span><i style="background:#ffd8a8;border:1px solid #e8a33d"></i>步梯</span>
+        <span><i style="background:#1a73e8"></i>路线</span>
+      </div>
+    </div>
+    <div class="card"><div class="sub" style="margin:0 0 8px;">路线指引</div>${steps}</div>
+    <div class="disclaimer">楼层图依据一楼平面图与各层疏散图绘制，房间与科室以现场指示牌为准。</div>
+  `);
+
+  const sel = document.getElementById('navSelect');
+  if (sel) {
+    sel.value = name || '';
+    sel.addEventListener('change', function () { renderNavPage(sel.value, 1, '', st); });
+  }
+  const inp = document.getElementById('navRoom');
+  if (inp) {
+    inp.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') renderNavPage('', f, (inp.value || '').trim(), st);
+    });
+    inp.addEventListener('blur', function () {
+      if ((inp.value || '').trim()) renderNavPage('', f, (inp.value || '').trim(), st);
+    });
+  }
+}
+
