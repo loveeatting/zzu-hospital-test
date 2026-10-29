@@ -150,7 +150,8 @@ const HOME_MODULES = [
   { action: 'dept-list', icon: '科', color: '#12a05c', title: '科室介绍', desc: '14 个科室' },
   { action: 'experts', icon: '医', color: '#e8710a', title: '专家介绍', desc: '职称·擅长' },
   { action: 'guide', icon: '指', color: '#8e44ad', title: '就医指南', desc: '挂号·退号' },
-  { action: 'access', icon: '楼', color: '#0b8ea8', title: '来院指引', desc: '交通·楼层' },
+  { action: 'nav', icon: '导', color: '#e8710a', title: '院内导航', desc: '平面图·路线' },
+  { action: 'access', icon: '楼', color: '#0b8ea8', title: '来院指引', desc: '楼层分布' },
   { action: 'appoint', icon: '约', color: '#d93025', title: '预约挂号', desc: '挂号·我的预约' },
   { action: 'agent', icon: 'AI', color: '#087f8c', title: 'AI 导诊', desc: '问诊·判断科室' },
   { action: 'health', icon: '康', color: '#00a3a3', title: '健康知识', desc: '症状·预防' },
@@ -342,6 +343,12 @@ async function renderAccess() {
         <div class="title">来院指引</div>
         <button class="linkbtn" style="background:#eef3fd;color:#1a73e8;" data-action="depts">返回首页</button>
       </div>
+      <div class="card tap" data-action="nav">
+        <div class="row">
+          <div><div class="title">院内导航</div><div class="sub">选择科室或房间号，看平面图与路线</div></div>
+          <div class="arrow">›</div>
+        </div>
+      </div>
       <div class="card">
         <div class="date-title">${esc(data.name || '')}</div>
         <div class="sub">${esc(data.address || '')}</div>
@@ -349,10 +356,7 @@ async function renderAccess() {
       <div class="card"><div class="date-title">交通路线</div>${transport}</div>
       ${floors}
       <div class="card"><div class="date-title">就诊提示</div>${tips}</div>
-      <div class="card">
-        <div class="date-title">找不到科室？</div>
-        <button class="btn" data-action="nav">院内导航（示意地图）</button>
-      </div>
+
       <div class="disclaimer">${esc(data.note || '')}</div>
     `);
   } catch (e) {
