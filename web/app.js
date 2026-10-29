@@ -1411,35 +1411,96 @@ function navRoomForDept(name) {
   return null;
 }
 
-/* 上层楼层：按消防疏散图的房间号生成网格 */
-function navUpperRooms(floor) {
-  const cfg = {
-    2: { prefix: '2', count: 26, start: 201 },
-    3: { prefix: '3', count: 24, start: 301 },
-    4: { prefix: '4', count: 26, start: 401 }
-  }[floor];
-  const rooms = [];
-  const perRow = 7;
-  const w = 36, h = 26, gapX = 4, gapY = 12;
-  const x0 = 20, y0 = 34;
-  for (let i = 0; i < cfg.count; i++) {
-    const col = i % perRow;
-    const row = Math.floor(i / perRow);
-    rooms.push({
-      id: 'r' + (cfg.start + i),
-      label: String(cfg.start + i),
-      x: x0 + col * (w + gapX),
-      y: y0 + row * (h + gapY),
-      w: w, h: h, depts: []
-    });
+/* 上层楼层布局：照 2F/3F/4F 消防疏散图，U 形走廊（北排 + 西侧 + 南排 + 东侧 + 中部楼电梯） */
+const NAV_UPPER = {
+  2: {
+    north: ['213', '214', '215', '216', '217', '218', '219', '220', '211', '202', '222', '223', '224'],
+    west: ['212', '212', '114'],
+    south: ['211', '210', '209', '208', '207', '206', '205', '204', '203'],
+    east: ['210', '210', '202'],
+    small: ['225', '226']
+  },
+  3: {
+    north: ['313', '314', '315', '316', '317', '318', '319', '电梯', '320', '321', '322'],
+    west: ['312', '311', '311'],
+    south: ['310', '309', '308', '307', '306', '305', '304', '303', '302'],
+    east: ['301', '301'],
+    small: ['323', '324']
+  },
+  4: {
+    north: ['415', '416', '417', '418', '419', '420', '421', '电梯', '422', '423', '424'],
+    west: ['414', '413', '413'],
+    south: ['412', '411', '410', '409', '408', '407', '406', '405', '404', '403', '402'],
+    east: ['401', '401'],
+    small: ['425', '426']
   }
+};
+
+function navUpperRooms(floor) {
+  const cfg = NAV_UPPER[floor];
+  if (!cfg) return [];
+  const rooms = [];
+
+  // 北排
+  const nW = 22, nH = 26, nGap = 3, nY = 26;
+  const nTotal = cfg.north.length;
+  const nX0 = Math.max(44, Math.round((340 - nTotal * (nW + nGap)) / 2) + 10);
+  cfg.north.forEach(function (label, idx) {
+    rooms.push({
+      id: 'n' + idx, label: label, x: nX0 + idx * (nW + nGap), y: nY, w: nW, h: nH,
+      kind: label === '电梯' ? 'lift' : 'room', side: 'north'
+    });
+  });
+
+  // 西侧列（竖向）
+  const wW = 24, wH = 34, wGap = 2, wX = 14;
+  cfg.west.forEach(function (label, idx) {
+    rooms.push({
+      id: 'w' + idx, label: label, x: wX, y: 62 + idx * (wH + wGap), w: wW, h: wH,
+      kind: 'room', side: 'west'
+    });
+  });
+
+  // 南排
+  const sW = 22, sH = 26, sGap = 3, sY = 196;
+  const sTotal = cfg.south.length;
+  const sX0 = Math.max(44, Math.round((340 - sTotal * (sW + sGap)) / 2) + 10);
+  cfg.south.forEach(function (label, idx) {
+    rooms.push({
+      id: 's' + idx, label: label, x: sX0 + idx * (sW + sGap), y: sY, w: sW, h: sH,
+      kind: 'room', side: 'south'
+    });
+  });
+
+  // 东侧列（竖向）
+  const eW = 24, eH = 52, eGap = 4, eX = 302;
+  cfg.east.forEach(function (label, idx) {
+    rooms.push({
+      id: 'e' + idx, label: label, x: eX, y: 62 + idx * (eH + eGap), w: eW, h: eH,
+      kind: 'room', side: 'east'
+    });
+  });
+
+  // 中部：楼梯 + 小房间
+  rooms.push({ id: 'stairs', label: '楼梯', x: 156, y: 92, w: 30, h: 40, kind: 'stairs', side: 'center' });
+  cfg.small.forEach(function (label, idx) {
+    rooms.push({
+      id: 'c' + idx, label: label, x: 190, y: 96 + idx * 24, w: 30, h: 20,
+      kind: 'room', side: 'center'
+    });
+  });
+
   return rooms;
+}
+
+function navLift(rooms) {
+  return rooms.filter(function (r) { return r.kind === 'lift'; })[0] || null;
 }
 
 function navSvgFloor(floor, target, roomNo) {
   const isF1 = floor === 1;
   const rooms = isF1 ? NAV_F1 : navUpperRooms(floor);
-  const gate = isF1 ? NAV_GATE : { id: 'elev', label: '电梯', x: 150, y: 196, w: 46, h: 22 };
+  const gate = isF1 ? NAV_GATE : (navLift(rooms) || { label: '电梯', x: 150, y: 196, w: 46, h: 22 });
 
   let targetRect = null;
   if (isF1 && target && target.room) {
@@ -1450,30 +1511,48 @@ function navSvgFloor(floor, target, roomNo) {
 
   const cells = rooms.map(function (r) {
     const on = targetRect && r.id === targetRect.id;
+    const isLift = r.kind === 'lift';
+    const isStair = r.kind === 'stairs';
+    let fill = '#e8eef8', stroke = '#c3d2e8', color = '#5b7bb0';
+    if (on) { fill = '#e8710a'; stroke = '#c85f00'; color = '#fff'; }
+    else if (isLift) { fill = '#d93025'; stroke = '#b5251b'; color = '#fff'; }
+    else if (isStair) { fill = '#eeeeee'; stroke = '#c8c8c8'; color = '#666'; }
     return '<g>' +
       '<rect x="' + r.x + '" y="' + r.y + '" width="' + r.w + '" height="' + r.h +
-      '" rx="3" fill="' + (on ? '#e8710a' : '#e8eef8') + '" stroke="' + (on ? '#c85f00' : '#c3d2e8') + '"/>' +
+      '" rx="3" fill="' + fill + '" stroke="' + stroke + '"/>' +
       '<text x="' + (r.x + r.w / 2) + '" y="' + (r.y + r.h / 2 + 3) + '" text-anchor="middle" font-size="' +
-      (r.label.length > 4 ? 6 : 7) + '" fill="' + (on ? '#fff' : '#5b7bb0') + '">' + esc(r.label) + '</text>' +
+      (r.label.length > 3 ? 6 : 7) + '" fill="' + color + '">' + esc(r.label) + '</text>' +
       '</g>';
   }).join('');
 
-  // 大门/电梯 高亮
-  const gateSvg = '<g>' +
-    '<rect x="' + gate.x + '" y="' + gate.y + '" width="' + gate.w + '" height="' + gate.h +
-    '" rx="3" fill="#d93025"/>' +
-    '<text x="' + (gate.x + gate.w / 2) + '" y="' + (gate.y + gate.h / 2 + 3) +
-    '" text-anchor="middle" font-size="7" fill="#fff">' + esc(gate.label) + '</text></g>';
+  const gateSvg = isF1
+    ? '<g><rect x="' + gate.x + '" y="' + gate.y + '" width="' + gate.w + '" height="' + gate.h +
+      '" rx="3" fill="#d93025"/>' +
+      '<text x="' + (gate.x + gate.w / 2) + '" y="' + (gate.y + gate.h / 2 + 3) +
+      '" text-anchor="middle" font-size="7" fill="#fff">' + esc(gate.label) + '</text></g>'
+    : '';
 
-  // 路线：大门 → 通道 → 目标
+  // 路线：一楼从大门出发；上层从电梯出发，沿中部走廊拐到目标
   let path = '';
   if (targetRect) {
-    const gx = gate.x + gate.w / 2;
-    const gy = gate.y;
+    let sx, sy, midY;
+    if (isF1) {
+      sx = gate.x + gate.w / 2; sy = gate.y; midY = 168;
+    } else {
+      sx = gate.x + gate.w / 2; sy = gate.y + gate.h; midY = 152;
+    }
     const tx = targetRect.x + targetRect.w / 2;
-    const ty = targetRect.y + targetRect.h;
-    const midY = isF1 ? 168 : 176;
-    const pts = [[gx, gy], [gx, midY], [tx, midY], [tx, ty]];
+    let ty;
+    if (targetRect.side === 'north' || targetRect.side === 'center') {
+      ty = targetRect.y + targetRect.h;
+    } else if (targetRect.side === 'south') {
+      ty = targetRect.y;
+    } else if (targetRect.side === 'west' || targetRect.side === 'east') {
+      ty = targetRect.y + targetRect.h / 2;
+    } else {
+      ty = targetRect.y;
+    }
+    const pts = [[sx, sy], [sx, midY], [tx, midY], [tx, ty]];
     path = '<polyline points="' + pts.map(function (p) { return p[0] + ',' + p[1]; }).join(' ') +
       '" fill="none" stroke="#1a73e8" stroke-width="2.4" stroke-dasharray="6 4" stroke-linejoin="round"/>' +
       '<circle cx="' + tx + '" cy="' + ty + '" r="3.2" fill="#1a73e8"/>';
