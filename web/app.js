@@ -1404,6 +1404,14 @@ const NAV_F1 = [
   { id: 'imaging',  label: '医学影像科',   x: 248, y: 148, w: 30,  h: 22, depts: ['超声科'] }
 ];
 
+const NAV_F1_GROUPS = [
+  { area: '口腔诊疗区', ids: ['dental', 'cbc'] },
+  { area: '门诊诊疗区', ids: ['derm_t', 'derm', 'eye_c', 'eye', 'surg1', 'surg2', 'dressing', 'med1'] },
+  { area: '医技检查区', ids: ['ct', 'ct_d', 'dr', 'dr_d', 'gi', 'imaging'] },
+  { area: '急诊与药房', ids: ['tcm', 'tcm_t', 'infusion', 'pharmacy', 'emerg'] },
+  { area: '其他', ids: ['equip', 'gyn', 'stairs_n', 'elev1', 'cashier', 'garden', 'wc_f', 'wc_m'] }
+];
+
 const NAV_GATE = { id: 'gate', label: '大门', x: 150, y: 212, w: 46, h: 20 };
 
 /* 上层楼层：照 2F/3F/4F 消防疏散图（北排 + 西侧 + 南排 + 东侧 + 中部） */
@@ -1430,6 +1438,11 @@ const NAV_UPPER = {
     small: ['425', '426']
   }
 };
+
+function navFindRoom(label) {
+  if (!label) return null;
+  return NAV_F1.filter(function (r) { return r.label === String(label); })[0] || null;
+}
 
 function navRoomForDept(name) {
   if (!name) return null;
@@ -1609,7 +1622,12 @@ function renderNav(deptName, floor, roomNo, start) {
   const f = floor || 1;
   const name = deptName || '';
   const st = start || 'lift';
-  const target = f === 1 ? (name ? { room: navRoomForDept(name) } : null) : null;
+  let target = null;
+  if (f === 1) {
+    const byRoom = room ? navFindRoom(room) : null;
+    if (byRoom) target = { room: byRoom };
+    else if (name) target = { room: navRoomForDept(name) };
+  }
   const foundRoom = target && target.room;
 
   const tabs = [1, 2, 3, 4].map(function (x) {
@@ -1644,7 +1662,7 @@ function renderNav(deptName, floor, roomNo, start) {
       ${inputArea}
       ${f === 1
         ? (name ? '<div class="sub" style="margin-top:8px;color:' + (foundRoom ? '#12a05c' : '#e8710a') + ';">' +
-            (foundRoom ? '目标：' + esc(foundRoom.label) + '（橙色高亮）' : '该科室在一楼图上未标注，请到导诊台确认') + '</div>' : '')
+            (foundRoom ? '目标：' + esc(foundRoom.label) + '（橙色高亮）' : '该位置在一楼图上未标注，请到导诊台确认') + '</div>' : '')
         : '<div class="sub" style="margin-top:8px;">起点</div>' + startChips}
     </div>
     <div class="card">
@@ -1702,7 +1720,16 @@ async function renderNavPage(deptName, floor, roomNo, start) {
     }).join('') + '</div>';
 
   const picker = f === 1
-    ? '<select id="navSelect" class="nav-select"><option value="">选择科室…</option>' + NAV_DEPT_OPTIONS(name) + '</select>'
+    ? '<select id="navSelect" class="nav-select"><option value="">选择房间（如 外科1 / 内科1）…</option>' +
+      NAV_F1_GROUPS.map(function (g) {
+        const opts = g.ids.map(function (id) {
+          const r = NAV_F1.filter(function (x) { return x.id === id; })[0];
+          if (!r) return '';
+          const sel = (room === r.label || (!room && name && navRoomForDept(name) === r)) ? ' selected' : '';
+          return '<option value="' + esc(r.label) + '"' + sel + '>' + esc(r.label) + '</option>';
+        }).join('');
+        return opts ? '<optgroup label="' + esc(g.area) + '">' + opts + '</optgroup>' : '';
+      }).join('') + '</select>'
     : '<input id="navRoom" class="nav-select" placeholder="输入房间号，如 ' +
       (f === 2 ? '215' : (f === 3 ? '315' : '415')) + '" value="' + esc(room) + '" />';
 
