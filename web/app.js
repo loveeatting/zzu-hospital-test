@@ -1393,7 +1393,7 @@ const NAV_F1 = [
   { id: 'wc_f',     label: '女卫生间',     x: 16,  y: 178, w: 24,  h: 26, depts: [] },
   { id: 'wc_m',     label: '男卫生间',     x: 42,  y: 178, w: 24,  h: 26, depts: [] },
   { id: 'pharmacy', label: '药房',        x: 122, y: 178, w: 44,  h: 26, depts: [] },
-  { id: 'med1',     label: '内科1',       x: 176, y: 178, w: 22,  h: 26, depts: ['内科'] },
+  { id: 'med1',     label: '内科',        x: 176, y: 178, w: 22,  h: 26, depts: ['内科'] },
   { id: 'emerg',    label: '急诊室',      x: 200, y: 178, w: 22,  h: 26, depts: [] },
   { id: 'tcm',      label: '中医科',      x: 224, y: 178, w: 22,  h: 26, depts: ['中医科'] },
   { id: 'infusion', label: '输液室',      x: 248, y: 178, w: 24,  h: 26, depts: [] },
