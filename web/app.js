@@ -1373,18 +1373,18 @@ async function renderKbItem(id) {
 
 /* 一楼房间布局：依据门诊楼一楼平面图（画布 340 x 250） */
 const NAV_F1 = [
-  { id: 'cbc', label: 'CBC牙片室', x: 56, y: 44, w: 20, h: 26, depts: ['口腔科'] }
-  { id: 'dental2', label: '口腔科2', x: 78, y: 44, w: 20, h: 26, depts: ['口腔科'] }
-  { id: 'derm_t', label: '皮肤科治疗室', x: 100, y: 44, w: 20, h: 26, depts: ['皮肤科'] }
-  { id: 'derm', label: '皮肤科', x: 122, y: 44, w: 20, h: 26, depts: ['皮肤科'] }
-  { id: 'eye', label: '眼科', x: 144, y: 44, w: 20, h: 26, depts: ['眼科'] }
-  { id: 'eye_c', label: '眼科检查室', x: 166, y: 44, w: 20, h: 26, depts: ['眼科'] }
-  { id: 'surg1', label: '外科1', x: 188, y: 44, w: 20, h: 26, depts: ['外科'] }
-  { id: 'surg2', label: '外科2', x: 210, y: 44, w: 20, h: 26, depts: ['外科'] }
-  { id: 'dressing', label: '换药室', x: 232, y: 44, w: 20, h: 26, depts: ['外科'] }
-  { id: 'equip', label: '设备间', x: 254, y: 44, w: 20, h: 26, depts: [] }
-  { id: 'gyn', label: '妇科', x: 276, y: 44, w: 20, h: 26, depts: ['妇科'] }
-  { id: 'stairs_n', label: '楼梯', x: 298, y: 44, w: 20, h: 26, depts: [] }
+  { id: 'cbc', label: 'CBC牙片室', x: 56, y: 44, w: 20, h: 26, depts: ['口腔科'] },
+  { id: 'dental2', label: '口腔科2', x: 78, y: 44, w: 20, h: 26, depts: ['口腔科'] },
+  { id: 'derm_t', label: '皮肤科治疗室', x: 100, y: 44, w: 20, h: 26, depts: ['皮肤科'] },
+  { id: 'derm', label: '皮肤科', x: 122, y: 44, w: 20, h: 26, depts: ['皮肤科'] },
+  { id: 'eye', label: '眼科', x: 144, y: 44, w: 20, h: 26, depts: ['眼科'] },
+  { id: 'eye_c', label: '眼科检查室', x: 166, y: 44, w: 20, h: 26, depts: ['眼科'] },
+  { id: 'surg1', label: '外科1', x: 188, y: 44, w: 20, h: 26, depts: ['外科'] },
+  { id: 'surg2', label: '外科2', x: 210, y: 44, w: 20, h: 26, depts: ['外科'] },
+  { id: 'dressing', label: '换药室', x: 232, y: 44, w: 20, h: 26, depts: ['外科'] },
+  { id: 'equip', label: '设备间', x: 254, y: 44, w: 20, h: 26, depts: [] },
+  { id: 'gyn', label: '妇科', x: 276, y: 44, w: 20, h: 26, depts: ['妇科'] },
+  { id: 'stairs_n', label: '楼梯', x: 298, y: 44, w: 20, h: 26, depts: [] },
   { id: 'dental',   label: '口腔科',      x: 16,  y: 44,  w: 36,  h: 96, depts: ['口腔科'] },
   { id: 'tcm_t',    label: '中医治疗室',   x: 36,  y: 146, w: 34,  h: 26, depts: ['康复理疗科（疼痛科）'] },
   { id: 'elev1',    label: '电梯',        x: 72,  y: 146, w: 20,  h: 26, depts: [] },
@@ -1402,7 +1402,7 @@ const NAV_F1 = [
   { id: 'dr',       label: 'DR机房',      x: 280, y: 100, w: 30,  h: 22, depts: ['放射科'] },
   { id: 'dr_d',     label: 'DR诊断室',    x: 280, y: 124, w: 30,  h: 22, depts: [] },
   { id: 'gi',       label: '胃肠机房',     x: 280, y: 148, w: 30,  h: 22, depts: [] },
-  { id: 'imaging',  label: '医学影像科',   x: 248, y: 148, w: 30,  h: 22, depts: ['超声科'] }
+  { id: 'imaging',  label: '医学影像科',   x: 248, y: 148, w: 30,  h: 22, depts: ['超声科'] },
 ];
 
 const NAV_F1_GROUPS = [
