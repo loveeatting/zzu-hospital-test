@@ -1,9 +1,12 @@
+import base64
 import datetime
 import hashlib
+import hmac
 import json
 import os
 import secrets
 import sqlite3
+import time
 import urllib.request
 
 from pathlib import Path
@@ -162,31 +165,84 @@ if ensure_database():
 ensure_extra_tables()
 
 
+# ---------------- 会话 token（HMAC 签名，不依赖数据库） ----------------
+
+SESSION_SECRET = os.environ.get("SESSION_SECRET", "zzu-hospital-demo-secret-2026").encode("utf-8")
+TOKEN_TTL = 7 * 24 * 3600     # 7 天
+
+
+def _sign(raw):
+    return hmac.new(SESSION_SECRET, raw.encode("utf-8"), hashlib.sha256).hexdigest()[:32]
+
+
+def make_token(student_no):
+    payload = {"s": student_no, "t": int(time.time()), "n": secrets.token_hex(6)}
+    raw = base64.urlsafe_b64encode(json.dumps(payload).encode("utf-8")).decode().rstrip("=")
+    return raw + "." + _sign(raw)
+
+
+def parse_token(token):
+    """校验签名与有效期，返回 payload 或 None。"""
+    if not token or "." not in token:
+        return None
+    raw, sig = token.rsplit(".", 1)
+    if not hmac.compare_digest(_sign(raw), sig):
+        return None
+    try:
+        pad = "=" * (-len(raw) % 4)
+        data = json.loads(base64.urlsafe_b64decode(raw + pad))
+    except Exception:
+        return None
+    if not data.get("s") or not data.get("t"):
+        return None
+    if time.time() - int(data["t"]) > TOKEN_TTL:
+        return None
+    return data
+
+
 def hash_password(password, salt):
     return hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
 
 
 def current_student(authorization: str | None = Header(default=None)):
-    """从 Authorization: Bearer <token> 解析当前登录学生。"""
+    """从 Authorization: Bearer <token> 解析当前登录学生。
+
+    token 为 HMAC 签名串，验签即可，不依赖 sessions 表；
+    sessions 表仅用于"单设备登录"判定，数据库被重置时自动补登记。
+    """
     if not authorization or not authorization.lower().startswith("bearer "):
         raise HTTPException(status_code=401, detail="请先登录")
     token = authorization.split(" ", 1)[1].strip()
 
+    payload = parse_token(token)
+    if payload is None:
+        raise HTTPException(status_code=401, detail="登录已过期，请重新登录")
+    sno = payload["s"]
+
     conn = get_conn()
     try:
-        row = conn.execute(
-            "SELECT st.student_no, st.name, st.phone, st.major "
-            "FROM sessions AS se "
-            "JOIN students AS st ON st.student_no = se.student_no "
-            "WHERE se.token = ?",
-            (token,),
+        student = conn.execute(
+            "SELECT student_no, name, phone, major FROM students WHERE student_no = ?", (sno,)
         ).fetchone()
+        if student is None:
+            raise HTTPException(status_code=401, detail="账号不存在，请重新登录")
+
+        row = conn.execute(
+            "SELECT token FROM sessions WHERE student_no = ?", (sno,)
+        ).fetchone()
+        if row is None:
+            # 数据库被重置（云端重新部署/重启）→ 自动补登记，不把用户踢下线
+            with conn:
+                conn.execute(
+                    "INSERT OR REPLACE INTO sessions (token, student_no, created_at) VALUES (?, ?, ?)",
+                    (token, sno, datetime.datetime.now().isoformat(timespec="seconds")),
+                )
+        elif row["token"] != token:
+            raise HTTPException(status_code=401, detail="你的账号已在其他设备登录，请重新登录")
     finally:
         conn.close()
 
-    if row is None:
-        raise HTTPException(status_code=401, detail="登录已失效，请重新登录")
-    return dict(row)
+    return dict(student)
 
 
 class LoginRequest(BaseModel):
@@ -213,7 +269,7 @@ def login(req: LoginRequest):
     if row is None or hash_password(req.password, row["salt"]) != row["password_hash"]:
         raise HTTPException(status_code=401, detail="学号或密码错误")
 
-    token = secrets.token_hex(16)
+    token = make_token(row["student_no"])
     conn = get_conn()
     try:
         with conn:

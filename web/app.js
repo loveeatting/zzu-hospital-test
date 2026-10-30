@@ -27,8 +27,12 @@ async function api(path, options = {}) {
   });
 
   if (res.status === 401) {
+    let data401 = null;
+    try { data401 = await res.json(); } catch (e) { data401 = null; }
     clearSession();
-    const msg = '登录已失效：你的账号可能已在其他设备登录，请重新登录';
+    const msg = (data401 && typeof data401.detail === 'string')
+      ? data401.detail
+      : '登录已失效，请重新登录';
     renderLogin(msg);
     toast(msg, 4000);
     throw new Error(msg);
@@ -785,8 +789,9 @@ function startHeartbeat() {
   stopHeartbeat();
   singleDevice.timer = setInterval(function () {
     if (!state.token) return;
-    api('/api/me').catch(function () { stopHeartbeat(); });
-  }, 15000);
+    if (document.hidden) return;      // 切到后台时不做无谓请求
+    api('/api/me').catch(function () { /* 401 由 api() 统一处理 */ });
+  }, 30000);
 }
 
 // 页面重新回到前台时立即校验一次（手机切回浏览器、电脑切回标签页）
