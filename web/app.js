@@ -149,40 +149,47 @@ async function doLogin() {
 
 const PALETTE = ['#1a73e8', '#12a05c', '#e8710a', '#8e44ad', '#d93025', '#0b8ea8'];
 
+const HOME_BLUE = '#1a73e8';
+const HOME_ORANGE = '#f4703a';
+
 const HOME_MODULES = [
-  { action: 'intro', icon: '院', color: '#1a73e8', title: '医院简介', desc: '医院概况·就诊须知' },
-  { action: 'dept-list', icon: '科', color: '#12a05c', title: '科室介绍', desc: '14 个科室' },
-  { action: 'experts', icon: '医', color: '#e8710a', title: '专家介绍', desc: '职称·擅长' },
-  { action: 'guide', icon: '指', color: '#8e44ad', title: '就医指南', desc: '挂号·退号' },
-  { action: 'access', icon: '楼', color: '#0b8ea8', title: '来院指引', desc: '导航·楼层' },
-  { action: 'appoint', icon: '约', color: '#d93025', title: '预约挂号', desc: '挂号·我的预约' },
-  { action: 'agent', icon: 'AI', color: '#087f8c', title: 'AI 导诊', desc: '问诊·判断科室' },
-  { action: 'health', icon: '康', color: '#00a3a3', title: '健康知识', desc: '症状·预防' },
-  { action: 'service', icon: '服', color: '#7b61ff', title: '服务咨询', desc: '时间·值班·医保' }
+  { action: 'agent', icon: 'AI', color: HOME_ORANGE, title: 'AI 导诊', desc: '说一句“牙疼”，帮你选科室', badge: '主入口' },
+  { action: 'appoint', icon: '挂', color: HOME_BLUE, title: '预约挂号', desc: '选时段，到院直接看' },
+  { action: 'intro', icon: '院', color: HOME_BLUE, title: '医院简介', desc: '二级综合·一院四区' },
+  { action: 'dept-list', icon: '科', color: HOME_BLUE, title: '科室介绍', desc: '14 个科室，都能看什么病' },
+  { action: 'experts', icon: '医', color: HOME_BLUE, title: '医生介绍', desc: '谁擅长看什么，何时出诊' },
+  { action: 'guide', icon: '指', color: HOME_BLUE, title: '就医指南', desc: '带什么、多少钱、怎么报' },
+  { action: 'access', icon: '楼', color: HOME_BLUE, title: '来院指引', desc: '怎么走、几楼、哪个门' },
+  { action: 'health', icon: '康', color: HOME_BLUE, title: '健康科普', desc: '常见症状怎么处理' },
+  { action: 'service', icon: '服', color: HOME_BLUE, title: '服务咨询', desc: '医保、值班、投诉' }
 ];
 
 async function renderDepartments() {
   const tiles = HOME_MODULES.map((m) => `
     <div class="tile tap" data-action="${m.action}">
       <div class="tile-icon" style="background:${m.color}">${esc(m.icon)}</div>
-      <div class="tile-title">${esc(m.title)}</div>
-      <div class="tile-desc">${esc(m.desc)}</div>
+      <div class="tile-body">
+        <div class="tile-head">
+          <span class="tile-title">${esc(m.title)}</span>
+          ${m.badge ? '<span class="tile-badge">' + esc(m.badge) + '</span>' : ''}
+        </div>
+        <div class="tile-desc">${esc(m.desc)}</div>
+      </div>
     </div>`).join('');
 
   show(`
     <div class="home-hero">
-      <div class="home-title">郑州大学医院</div>
-      <div class="home-sub">门诊预约 · 智能导诊 · 健康科普</div>
-      <div class="home-links">
-        <span class="home-link" data-action="guide">就医指南</span>
-        <span class="home-link" data-action="access">来院指引</span>
-        <span class="home-link" data-action="nav">院内导航</span>
-        <span class="home-link" data-action="all-reviews" data-doctor="" data-name="">就诊口碑</span>
+      <div class="home-title">郑州大学校医院</div>
+      <div class="home-sub">校医通 · 门诊预约与智能导诊</div>
+      <div class="home-ask tap" data-action="agent">
+        <span class="ask-ico">AI</span>
+        <span class="ask-ph">说说哪儿不舒服，帮你选科室</span>
+        <span class="ask-btn">开始问诊</span>
       </div>
     </div>
-    <div class="notice-bar">门诊时间：周一至周五 08:00–12:00 / 14:00–17:30，急诊 24 小时开放</div>
+    <div class="notice-bar">今日号源充足 · 门诊 08:00–12:00 / 14:00–17:30 · 急诊 24 小时开放</div>
     <div class="mod-grid">${tiles}</div>
-    <div class="disclaimer">页面信息为原型演示数据，具体以医院公告为准。</div>
+    <div class="foot">校医通 v1.0 · 郑州大学 · 原型演示数据，具体以医院公告为准</div>
   `);
 }
 

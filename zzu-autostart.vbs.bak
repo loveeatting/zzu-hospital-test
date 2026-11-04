@@ -1,0 +1,6 @@
+' ZZU hospital platform autostart: backend + cloudflare tunnel
+Dim ws
+Set ws = CreateObject("WScript.Shell")
+ws.Run """F:\zzu-hospital\run_backend.bat""", 0, False
+WScript.Sleep 4000
+ws.Run """F:\zzu-hospital\run_tunnel.bat""", 0, False

@@ -139,6 +139,22 @@ def main():
         check("agent 接口可用", s == 200, "status=%s" % s)
         if isinstance(d, dict):
             check("返回回复文本", bool(d.get("reply")), d.get("source"))
+
+            # 新版导诊：先追问 2-3 个鉴别问题，再给科室卡片
+            convo = [{"role": "user", "content": "牙疼得厉害"}]
+            card = None
+            first_asked = "问题" in (d.get("reply") or "")
+            for _ in range(3):
+                if (d.get("card") or {}).get("type") == "department":
+                    card = d.get("card")
+                    break
+                convo.append({"role": "assistant", "content": d.get("reply") or ""})
+                convo.append({"role": "user", "content": "牙疼"})
+                s2, d = call("/api/agent/chat", "POST", {"messages": convo}, token=token)
+                if not isinstance(d, dict):
+                    break
+            check("导诊先追问再给结论", first_asked or bool((d.get("card") or {}).get("type") == "department"),
+                  "首轮追问=%s" % first_asked)
             check("识别出科室", (d.get("card") or {}).get("type") == "department",
                   (d.get("card") or {}).get("department_name"))
 

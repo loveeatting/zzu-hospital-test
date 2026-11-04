@@ -1,4 +1,4 @@
-/* 客服工作台 · 郑州大学医院
+/* 客服工作台 · 郑州大学校医院
  * 功能：登录 → 会话列表 → 打开会话 → 回复学生
  * 认证：Bearer token 存 localStorage（staff_token）
  */
@@ -117,7 +117,7 @@ function startWatch() {
     try {
       const list = await api('/api/staff/threads');
       const unread = list.reduce((a, t) => a + (t.unread_staff || 0), 0);
-      document.title = (unread > 0 ? '(' + unread + ') ' : '') + '客服工作台 · 郑州大学医院';
+      document.title = (unread > 0 ? '(' + unread + ') ' : '') + '客服工作台 · 郑州大学校医院';
 
       const onList = !!document.getElementById('refreshBtn');
       S.threads = list;
