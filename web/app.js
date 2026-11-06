@@ -149,47 +149,282 @@ async function doLogin() {
 
 const PALETTE = ['#1a73e8', '#12a05c', '#e8710a', '#8e44ad', '#d93025', '#0b8ea8'];
 
+/* ---------------- 底部三 tab ---------------- */
+
+function tabBar(active) {
+  const items = [
+    { key: 'home', action: 'depts', label: '首页', icon: '<path d="M12 3.6 3.4 10.8V21h5.6v-5.6h6V21h5.6V10.8z"/>' },
+    { key: 'my', action: 'my', label: '我的预约', icon: '<rect x="3.4" y="5" width="17.2" height="16" rx="3.4"/><path d="M8 2.8v4M16 2.8v4M3.4 10h17.2"/>' },
+    { key: 'profile', action: 'profile', label: '个人中心', icon: '<circle cx="12" cy="8" r="3.8"/><path d="M4.6 21a7.4 7.4 0 0 1 14.8 0"/>' }
+  ];
+  return '<nav class="tabbar">' + items.map(function (it) {
+    const on = it.key === active;
+    return '<button class="tab ' + (on ? 'on' : '') + '" data-action="' + it.action + '">' +
+      '<svg viewBox="0 0 24 24" fill="' + (on ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">' +
+      it.icon + '</svg><span>' + it.label + '</span></button>';
+  }).join('') + '</nav>';
+}
+
+/* ---------------- 首页 ---------------- */
+
 const HOME_BLUE = '#1a73e8';
 const HOME_ORANGE = '#f4703a';
 
 const HOME_MODULES = [
-  { action: 'agent', icon: 'AI', color: HOME_ORANGE, title: 'AI 导诊', desc: '说一句“牙疼”，帮你选科室', badge: '主入口' },
-  { action: 'appoint', icon: '挂', color: HOME_BLUE, title: '预约挂号', desc: '选时段，到院直接看' },
-  { action: 'intro', icon: '院', color: HOME_BLUE, title: '医院简介', desc: '二级综合·一院四区' },
-  { action: 'dept-list', icon: '科', color: HOME_BLUE, title: '科室介绍', desc: '14 个科室，都能看什么病' },
-  { action: 'experts', icon: '医', color: HOME_BLUE, title: '医生介绍', desc: '谁擅长看什么，何时出诊' },
-  { action: 'guide', icon: '指', color: HOME_BLUE, title: '就医指南', desc: '带什么、多少钱、怎么报' },
-  { action: 'access', icon: '楼', color: HOME_BLUE, title: '来院指引', desc: '怎么走、几楼、哪个门' },
-  { action: 'health', icon: '康', color: HOME_BLUE, title: '健康科普', desc: '常见症状怎么处理' },
-  { action: 'service', icon: '服', color: HOME_BLUE, title: '服务咨询', desc: '医保、值班、投诉' }
+  { action: 'agent', icon: 'spark', title: 'AI 导诊', desc: '说一句症状<br/>帮你选科室', badge: '主入口' },
+  { action: 'appoint', icon: 'cal', title: '预约挂号', desc: '快速预约<br/>省时省心' },
+  { action: 'intro', icon: 'hosp', title: '医院简介', desc: '二级综合<br/>一院四区' },
+  { action: 'dept-list', icon: 'dept', title: '科室介绍', desc: '14 个科室<br/>都能看什么' },
+  { action: 'experts', icon: 'doc', title: '医生介绍', desc: '了解医生<br/>专业擅长' },
+  { action: 'guide', icon: 'guide', title: '就医指南', desc: '就诊须知<br/>轻松就医' },
+  { action: 'access', icon: 'route', title: '来院指引', desc: '怎么走<br/>几楼哪个门' },
+  { action: 'health', icon: 'book', title: '健康科普', desc: '科学健康<br/>从这里开始' },
+  { action: 'service', icon: 'svc', title: '服务咨询', desc: '医保值班<br/>人工客服' }
 ];
 
+const HOME_ICONS = {
+  spark: '<path d="M12 3l1.9 4.6L18.5 9.5 13.9 11.4 12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><circle cx="18" cy="16" r="2"/>',
+  cal: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/><circle cx="16" cy="16" r="3.6"/><path d="M16 14.6V16l1 1"/>',
+  hosp: '<path d="M4 21V8l8-4.5L20 8v13"/><path d="M9 21v-5.5h6V21"/><path d="M12 7.5v3.2M10.4 9.1h3.2"/>',
+  dept: '<rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/>',
+  doc: '<path d="M7 3v6a3.5 3.5 0 0 0 7 0V3"/><path d="M7 3h1.6M13.4 3H15"/><path d="M10.5 12.5V16a4 4 0 0 0 8 0v-1.6"/><circle cx="18.5" cy="12.4" r="1.9"/>',
+  guide: '<path d="M12 21s6.6-5.6 6.6-10.4A6.6 6.6 0 1 0 5.4 10.6C5.4 15.4 12 21 12 21z"/><circle cx="12" cy="10.3" r="2.4"/>',
+  route: '<circle cx="6" cy="18" r="2.4"/><circle cx="18" cy="6" r="2.4"/><path d="M8.2 16.4c4.4-1.4 3.6-6.2 7.6-8.2"/>',
+  book: '<path d="M4 5.4A2.4 2.4 0 0 1 6.4 3H11v17H6.4A2.4 2.4 0 0 0 4 22z"/><path d="M20 5.4A2.4 2.4 0 0 0 17.6 3H13v17h4.6A2.4 2.4 0 0 1 20 22z"/><path d="M15.5 8.6v3M14 10.1h3"/>',
+  svc: '<path d="M21 11.6a8 8 0 0 1-8 8H7.4L3.4 22v-9.4a8 8 0 0 1 8-8h1.6a8 8 0 0 1 8 7z"/><path d="M9 10.5h6M9 14h4"/>',
+  gear: '<circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  shield: '<path d="M12 3l7.5 3v5.2c0 4.6-3.1 8.3-7.5 9.8-4.4-1.5-7.5-5.2-7.5-9.8V6z"/><path d="M9 12l2.2 2.2L15.4 10"/>',
+  card: '<rect x="2.8" y="5.4" width="18.4" height="13.2" rx="3"/><path d="M2.8 10h18.4"/><path d="M6.4 14.6h3.6"/>',
+  bell: '<path d="M18 15.6V10a6 6 0 1 0-12 0v5.6l-1.6 2.2h15.2z"/><path d="M10 20.4a2.2 2.2 0 0 0 4 0"/>',
+  user: '<circle cx="12" cy="8" r="3.6"/><path d="M4.8 21a7.2 7.2 0 0 1 14.4 0"/>',
+  clipboard: '<rect x="5" y="4.4" width="14" height="16" rx="2.6"/><path d="M9 4.4V3.2h6v1.2"/><path d="M8.6 10h6.8M8.6 13.6h6.8M8.6 17.2h4"/>'
+};
+
+function homeIcon(key, color, size) {
+  return '<svg viewBox="0 0 24 24" width="' + (size || 26) + '" height="' + (size || 26) + '" fill="none" ' +
+    'stroke="' + color + '" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
+    (HOME_ICONS[key] || '') + '</svg>';
+}
+
 async function renderDepartments() {
-  const tiles = HOME_MODULES.map((m) => `
-    <div class="tile tap" data-action="${m.action}">
-      <div class="tile-icon" style="background:${m.color}">${esc(m.icon)}</div>
-      <div class="tile-body">
-        <div class="tile-head">
-          <span class="tile-title">${esc(m.title)}</span>
-          ${m.badge ? '<span class="tile-badge">' + esc(m.badge) + '</span>' : ''}
-        </div>
-        <div class="tile-desc">${esc(m.desc)}</div>
-      </div>
-    </div>`).join('');
+  const tiles = HOME_MODULES.map(function (m) {
+    const hot = !!m.badge;
+    const color = hot ? HOME_ORANGE : HOME_BLUE;
+    return '<div class="tile tap" data-action="' + m.action + '">' +
+      '<div class="tile-icon"' + (hot ? ' style="background:linear-gradient(150deg,#ffe9dd,#ffd3bd)"' : '') + '>' +
+      homeIcon(m.icon, color, 26) + '</div>' +
+      '<div class="tile-head"><span class="tile-title">' + esc(m.title) + '</span>' +
+      (hot ? '<span class="tile-badge">' + esc(m.badge) + '</span>' : '') + '</div>' +
+      '<div class="tile-desc">' + m.desc + '</div>' +
+      '<div class="tile-go">›</div>' +
+      '</div>';
+  }).join('');
 
   show(`
     <div class="home-hero">
-      <div class="home-title">郑州大学校医院</div>
-      <div class="home-sub">校医通 · 门诊预约与智能导诊</div>
-      <div class="home-ask tap" data-action="agent">
-        <span class="ask-ico">AI</span>
-        <span class="ask-ph">说说哪儿不舒服，帮你选科室</span>
-        <span class="ask-btn">开始问诊</span>
+      <div class="hero-photo"></div>
+      <div class="slogan">校医随行，健康无忧</div>
+      <div class="slogan-bar"></div>
+    </div>
+
+    <div class="ai-card tap" data-action="agent">
+      <div class="ai-glow"></div>
+      <div class="ai-title">AI 智能导诊</div>
+      <div class="ai-sub">一句话描述症状，智能推荐科室</div>
+      <div class="ai-input">
+        <span class="ai-spark">✦</span>
+        <span class="ai-ph">比如：我头晕，应该挂哪个科？</span>
+        <span class="ai-go">›</span>
+      </div>
+      <div class="ai-robot">
+        <svg viewBox="0 0 120 120" fill="none">
+          <ellipse cx="60" cy="110" rx="30" ry="6" fill="#1c6fc4" opacity=".18"/>
+          <rect x="26" y="34" width="68" height="56" rx="24" fill="#fff"/>
+          <rect x="34" y="46" width="52" height="30" rx="15" fill="#0f2f52"/>
+          <circle cx="50" cy="61" r="5" fill="#7fe0ff"/><circle cx="70" cy="61" r="5" fill="#7fe0ff"/>
+          <path d="M52 70q8 6 16 0" stroke="#7fe0ff" stroke-width="3" stroke-linecap="round"/>
+          <rect x="56" y="22" width="8" height="12" rx="4" fill="#cfe8fd"/>
+          <circle cx="60" cy="18" r="5" fill="#7fe0ff"/>
+          <rect x="16" y="52" width="10" height="22" rx="5" fill="#cfe8fd"/>
+          <rect x="94" y="52" width="10" height="22" rx="5" fill="#cfe8fd"/>
+        </svg>
       </div>
     </div>
-    <div class="notice-bar">今日号源充足 · 门诊 08:00–12:00 / 14:00–17:30 · 急诊 24 小时开放</div>
+
+    <div class="route-card tap" data-action="nav">
+      <span class="route-pin">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="#1a73e8">
+          <path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/>
+        </svg>
+      </span>
+      <span class="route-name">就医路线</span>
+      <span class="route-div"></span>
+      <span class="route-sub">郑州大学校医院</span>
+      <span class="route-chev">›</span>
+    </div>
+
+    <div class="notice-bar tap" data-action="guide">
+      <span class="notice-ico">🕘</span>
+      <span class="notice-text">今日号源充足 · 门诊 08:00–12:00 / 14:00–17:30</span>
+      <span class="notice-more">查看详情 ›</span>
+    </div>
+
     <div class="mod-grid">${tiles}</div>
-    <div class="foot">校医通 v1.0 · 郑州大学 · 原型演示数据，具体以医院公告为准</div>
+
+    <div class="ask-bar tap" data-action="agent">
+      <span class="ask-avatar">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+          <rect x="4" y="7" width="16" height="12" rx="5" fill="#7fc4f2"/>
+          <rect x="7" y="10" width="10" height="6" rx="3" fill="#0f2f52"/>
+          <circle cx="10" cy="13" r="1.2" fill="#7fe0ff"/><circle cx="14" cy="13" r="1.2" fill="#7fe0ff"/>
+          <circle cx="12" cy="4.6" r="1.6" fill="#7fc4f2"/><path d="M12 6.2v1.4" stroke="#7fc4f2" stroke-width="1.4"/>
+        </svg>
+      </span>
+      <span class="ask-ph">有问题？快来问我吧~</span>
+      <span class="ask-go">›</span>
+    </div>
+
+    ${tabBar('home')}
+  `);
+}
+
+/* ---------------- 个人中心 ---------------- */
+
+async function renderProfile() {
+  show('<div class="loading">加载中…</div>');
+  let appts = [];
+  let reviews = 0;
+  try {
+    const list = await api('/api/appointments');
+    appts = list || [];
+  } catch (e) { appts = []; }
+  try {
+    const mine = await api('/api/reviews/mine');
+    reviews = (mine.reviews || mine || []).length;
+  } catch (e) { reviews = 0; }
+
+  const st = state.student || {};
+  const booked = appts.filter(function (a) { return a.status === 'BOOKED'; }).length;
+  const today = new Date().toISOString().slice(0, 10);
+  const visited = appts.filter(function (a) { return a.date && a.date < today; }).length;
+
+  show(`
+    <div class="me-hero">
+      <div class="me-photo"></div>
+      <div class="me-row">
+        <div class="me-avatar">${esc((st.name || '同').slice(0, 1))}</div>
+        <div class="me-info">
+          <div class="me-name">${esc(st.name || '同学')}<span class="me-tag">在校生</span></div>
+          <div class="me-sub">${esc(st.major || '郑州大学')} · ${esc(st.student_no || '')}</div>
+        </div>
+        <div class="me-chev">›</div>
+      </div>
+    </div>
+
+    <div class="me-stats">
+      <div class="me-stat tap" data-action="my">
+        <div class="me-ico">${homeIcon('cal', '#2b87e0', 22)}</div>
+        <div class="me-num">${booked}</div>
+        <div class="me-label">我的预约</div>
+      </div>
+      <div class="me-stat tap" data-action="my">
+        <div class="me-ico">${homeIcon('doc', '#2b87e0', 22)}</div>
+        <div class="me-num">${visited}</div>
+        <div class="me-label">就诊记录</div>
+      </div>
+      <div class="me-stat tap" data-action="all-reviews">
+        <div class="me-ico">${homeIcon('svc', '#2b87e0', 22)}</div>
+        <div class="me-num">${reviews}</div>
+        <div class="me-label">我的评价</div>
+      </div>
+      <div class="me-stat tap" data-action="guide">
+        <div class="me-ico">${homeIcon('hosp', '#2b87e0', 22)}</div>
+        <div class="me-num" style="font-size:14px;line-height:34px;">医保凭证</div>
+        <div class="me-label">政策查询</div>
+      </div>
+    </div>
+
+    <div class="me-guard tap" data-action="service">
+      <div class="me-guard-left">
+        <div class="me-guard-title">就医保障</div>
+        <div class="me-guard-sub">医保政策、值班医生、人工客服</div>
+      </div>
+      <span class="me-guard-ico">${homeIcon('shield', '#2b87e0', 24)}</span>
+      <span class="route-chev">›</span>
+    </div>
+
+    <div class="me-menu">
+      <div class="me-item tap" data-action="profile-info">
+        <span class="me-item-ico">${homeIcon('user', '#2b87e0', 19)}</span><span class="me-item-text">个人信息</span><span class="me-item-extra">${esc(st.student_no || '')}</span><span class="me-chev">›</span>
+      </div>
+      <div class="me-item tap" data-action="profile-card">
+        <span class="me-item-ico">${homeIcon('card', '#2b87e0', 19)}</span><span class="me-item-text">我的就诊卡</span><span class="me-item-extra">${esc(st.student_no || '')}</span><span class="me-chev">›</span>
+      </div>
+      <div class="me-item tap" data-action="profile-record">
+        <span class="me-item-ico">${homeIcon('clipboard', '#2b87e0', 19)}</span><span class="me-item-text">健康档案</span><span class="me-item-extra">${appts.length} 条</span><span class="me-chev">›</span>
+      </div>
+      <div class="me-item tap" data-action="service">
+        <span class="me-item-ico">${homeIcon('bell', '#2b87e0', 19)}</span><span class="me-item-text">消息通知</span><span class="me-item-extra">客服会话</span><span class="me-chev">›</span>
+      </div>
+      <div class="me-item tap" data-action="profile-setting">
+        <span class="me-item-ico">${homeIcon('gear', '#2b87e0', 19)}</span><span class="me-item-text">设置</span><span class="me-item-extra"></span><span class="me-chev">›</span>
+      </div>
+    </div>
+
+    <div class="me-ai tap" data-action="agent">
+      <div class="me-ai-robot"><svg viewBox="0 0 24 24" width="30" height="30" fill="none"><rect x="4" y="7" width="16" height="12" rx="5" fill="#7fc4f2"/><rect x="7" y="10" width="10" height="6" rx="3" fill="#0f2f52"/><circle cx="10" cy="13" r="1.2" fill="#7fe0ff"/><circle cx="14" cy="13" r="1.2" fill="#7fe0ff"/><circle cx="12" cy="4.6" r="1.6" fill="#7fc4f2"/><path d="M12 6.2v1.4" stroke="#7fc4f2" stroke-width="1.4"/></svg></div>
+      <div class="me-ai-text">
+        <div class="me-ai-sub">有任何问题？</div>
+        <div class="me-ai-title">联系 AI 智能助手</div>
+        <div class="me-ai-sub">7×24 小时为您服务</div>
+      </div>
+      <button class="me-ai-btn" data-action="agent">立即咨询 ›</button>
+    </div>
+
+    <button class="me-logout" data-action="logout">退出登录</button>
+
+    ${tabBar('profile')}
+  `);
+}
+
+/* 个人中心的二级说明页 */
+function renderProfileDetail(kind) {
+  const st = state.student || {};
+  const data = {
+    info: {
+      title: '个人信息',
+      rows: [['姓名', st.name || ''], ['学号', st.student_no || ''], ['学院/专业', st.major || '未填写'],
+             ['手机号', st.phone || '未填写'], ['身份', '在校生（学生账号）']]
+    },
+    card: {
+      title: '我的就诊卡',
+      rows: [['就诊卡号', st.student_no || ''], ['绑定状态', '已绑定（学生账号自动生成）'],
+             ['使用范围', '郑州大学校医院门诊'], ['提示', '到院就诊请携带校园卡/身份证']]
+    },
+    record: {
+      title: '健康档案',
+      rows: [['说明', '毕业前可在此查看历次就诊与评价记录'],
+             ['当前状态', '原型阶段仅统计预约与评价条数'],
+             ['完整就诊档案', '由医院 HIS 系统保存，本平台不存储病历']]
+    },
+    setting: {
+      title: '设置',
+      rows: [['消息通知', '原型未开启推送'], ['隐私说明', '仅保存预约与评价所需信息'],
+             ['数据存储', '云端 SQLite，演示数据定期重置'], ['退出登录', '底部按钮可退出']]
+    }
+  }[kind] || { title: '说明', rows: [] };
+
+  show(`
+    <div class="row" style="margin-bottom:12px;">
+      <div class="title">${esc(data.title)}</div>
+      <button class="linkbtn" style="background:#eef3fd;color:#1a73e8;" data-action="profile">返回</button>
+    </div>
+    <div class="card">
+      ${data.rows.map(function (r) {
+        return '<div class="kv"><span class="kv-k">' + esc(r[0]) + '</span><span class="kv-v">' + esc(r[1]) + '</span></div>';
+      }).join('')}
+    </div>
+    <div class="disclaimer">原型演示页面，正式版将以医院实际规定为准。</div>
   `);
 }
 
@@ -577,6 +812,7 @@ async function renderMy() {
         <div class="title">我的预约</div>
         <button class="linkbtn" style="background:#eef3fd;color:#1a73e8;" data-action="depts">返回首页</button>
       </div>
+      ${tabBar('my')}
       <div class="card">
         <div class="sub">${esc(state.student.name)} · ${esc(state.student.student_no)} · ${esc(state.student.major || '')}</div>
       </div>
@@ -697,6 +933,11 @@ document.addEventListener('click', (ev) => {
     case 'guide': renderGuide(); break;
     case 'access': renderAccess(); break;
     case 'nav': renderNavPage('', 1, '', 'lift'); break;
+    case 'profile': renderProfile(); break;
+    case 'profile-info': renderProfileDetail('info'); break;
+    case 'profile-card': renderProfileDetail('card'); break;
+    case 'profile-record': renderProfileDetail('record'); break;
+    case 'profile-setting': renderProfileDetail('setting'); break;
     case 'nav-dept': renderNavPage(el.dataset.name || '', 1, '', 'lift'); break;
     case 'nav-floor': renderNavPage(el.dataset.name || '', Number(el.dataset.floor) || 1, '', el.dataset.start || 'lift'); break;
     case 'access-floor': renderNavPage(el.dataset.name || '', Number(el.dataset.floor) || 1, el.dataset.room || '', el.dataset.start || 'lift'); break;
@@ -815,8 +1056,16 @@ function stopHeartbeat() {
   }
 }
 
+function applyDeepLink() {
+  const h = (location.hash || '').replace('#', '');
+  if (h === 'profile') { renderProfile(); return true; }
+  if (h === 'my') { renderMy(); return true; }
+  return false;
+}
+
 function boot() {
   renderUser();
+  if (applyDeepLink()) return;
   if (state.token && state.student) {
     renderDepartments();
     startHeartbeat();

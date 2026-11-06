@@ -49,8 +49,8 @@ print("目标:", BASE)
 print("\n=== 1. 页面与静态资源 ===")
 for path, must in (
     ("/app/", "校医通"),
-    ("/app/app.js", "home-ask"),
-    ("/app/style.css", "tile-title"),
+    ("/app/app.js", "tabbar"),
+    ("/app/style.css", ".tabbar"),
     ("/app/staff.html", "客服工作台"),
     ("/app/staff.js", "staff_token"),
 ):
