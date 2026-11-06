@@ -172,39 +172,104 @@ function avatarGender(seed) {
   return h % 2 === 0 ? 'boy' : 'girl';
 }
 
+let _avUid = 0;
+
+/* 背景渐变（每个实例唯一 id，避免冲突） */
+function _avBg(uid, c1, c2) {
+  return 'url(#bg' + uid + ')' ;
+}
+
 function qAvatarSVG(seed, size) {
   const g = avatarGender(seed);
   const s = size || 34;
-  if (g === 'girl') {
-    return '<svg viewBox="0 0 64 64" width="' + s + '" height="' + s + '">' +
-      '<rect width="64" height="64" fill="#eaf4ff"/>' +
-      '<circle cx="32" cy="34" r="20" fill="#ffd9c2"/>' +
-      '<path d="M12 34c0-12 9-20 20-20s20 8 20 20c0 4-2 6-4 6 0-9-7-14-16-14S16 31 16 40c-2 0-4-2-4-6z" fill="#3a2b2b"/>' +
-      '<circle cx="25" cy="35" r="2.2" fill="#3a2b2b"/><circle cx="39" cy="35" r="2.2" fill="#3a2b2b"/>' +
-      '<path d="M28 42q4 3.4 8 0" stroke="#d9714f" stroke-width="2" fill="none" stroke-linecap="round"/>' +
-      '<path d="M12 64c2-9 9-13 20-13s18 4 20 13z" fill="#f4a4c0"/>' +
-      '</svg>';
-  }
-  return '<svg viewBox="0 0 64 64" width="' + s + '" height="' + s + '">' +
-    '<rect width="64" height="64" fill="#eaf4ff"/>' +
-    '<circle cx="32" cy="34" r="20" fill="#ffd9c2"/>' +
-    '<path d="M14 30c0-11 8-17 18-17s18 6 18 17c0 2-1 3-2 3-1-8-7-12-16-12s-15 4-16 12c-1 0-2-1-2-3z" fill="#2f2622"/>' +
-    '<circle cx="25" cy="35" r="2.2" fill="#3a2b2b"/><circle cx="39" cy="35" r="2.2" fill="#3a2b2b"/>' +
-    '<path d="M28 42q4 3.4 8 0" stroke="#d9714f" stroke-width="2" fill="none" stroke-linecap="round"/>' +
-    '<path d="M12 64c2-9 9-13 20-13s18 4 20 13z" fill="#4aa4ef"/>' +
+  const uid = ++_avUid;
+  const isGirl = g === 'girl';
+  const bg1 = isGirl ? '#ffe6f1' : '#e3f1ff';
+  const bg2 = isGirl ? '#ffd2e5' : '#c9e4ff';
+  const hair = isGirl ? '#4a3138' : '#33282a';
+  const skin = '#ffddc8';
+  const skinShade = '#f6c9ae';
+  const cloth = isGirl ? '#f27fa5' : '#3f95e8';
+  const cloth2 = isGirl ? '#e26a93' : '#2b7fd1';
+
+  return '<svg viewBox="0 0 64 64" width="' + s + '" height="' + s + '" xmlns="http://www.w3.org/2000/svg">' +
+    '<defs>' +
+    '<linearGradient id="bg' + uid + '" x1="0" y1="0" x2="1" y2="1">' +
+    '<stop offset="0" stop-color="' + bg1 + '"/><stop offset="1" stop-color="' + bg2 + '"/></linearGradient>' +
+    '<linearGradient id="cl' + uid + '" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="' + cloth + '"/><stop offset="1" stop-color="' + cloth2 + '"/></linearGradient>' +
+    '</defs>' +
+    '<rect width="64" height="64" fill="url(#bg' + uid + ')"/>' +
+    // 肩膀与衣服
+    '<path d="M6 64c1-9 9-15 26-15s25 6 26 15z" fill="url(#cl' + uid + ')"/>' +
+    // 领口
+    '<path d="M27 50l5 6 5-6" fill="none" stroke="#ffffff" stroke-width="2" stroke-linejoin="round" opacity=".85"/>' +
+    // 脖子
+    '<rect x="28" y="42" width="8" height="9" rx="4" fill="' + skinShade + '"/>' +
+    // 头发（后层，女生长发）
+    (isGirl
+      ? '<path d="M14 34c0-14 8-22 18-22s18 8 18 22c0 8-2 14-4 18l-6-3 2-14H22l2 14-6 3c-2-4-4-10-4-18z" fill="' + hair + '"/>'
+      : '') +
+    // 耳朵
+    '<circle cx="18.6" cy="31" r="2.6" fill="' + skinShade + '"/>' +
+    '<circle cx="45.4" cy="31" r="2.6" fill="' + skinShade + '"/>' +
+    // 脸
+    '<ellipse cx="32" cy="30" rx="13.4" ry="14.2" fill="' + skin + '"/>' +
+    // 刘海/短发
+    (isGirl
+      ? '<path d="M18.6 27c0-9 6-14 13.4-14s13.4 5 13.4 14c-2-5-5-7-8-7-2 3-6 5-11 5-3 0-5 0-7.8 2z" fill="' + hair + '"/>'
+      : '<path d="M18.4 27c0-9.4 6-15 13.6-15s13.6 5.6 13.6 15c0 1.4-.6 2.2-1.4 2.4-.6-5-3.4-8-6.2-8.4-2.6 2.4-7 3.6-11.6 3.6-2.6 0-4.6.8-6 2.4-.8-.2-2-1-2-2z" fill="' + hair + '"/>') +
+    // 眉毛
+    '<path d="M23.6 25.6q2.6-1.4 5 .2" stroke="' + hair + '" stroke-width="1.5" fill="none" stroke-linecap="round"/>' +
+    '<path d="M35.4 25.8q2.4-1.6 5-.2" stroke="' + hair + '" stroke-width="1.5" fill="none" stroke-linecap="round"/>' +
+    // 眼睛
+    '<ellipse cx="26.6" cy="31.4" rx="2" ry="2.6" fill="#2b2b33"/>' +
+    '<ellipse cx="37.4" cy="31.4" rx="2" ry="2.6" fill="#2b2b33"/>' +
+    '<circle cx="27.2" cy="30.6" r=".7" fill="#fff"/>' +
+    '<circle cx="38" cy="30.6" r=".7" fill="#fff"/>' +
+    // 腮红
+    '<ellipse cx="22.6" cy="36.4" rx="2.6" ry="1.5" fill="#ff9d9d" opacity=".45"/>' +
+    '<ellipse cx="41.4" cy="36.4" rx="2.6" ry="1.5" fill="#ff9d9d" opacity=".45"/>' +
+    // 嘴
+    '<path d="M29.4 38.4q2.6 2.6 5.2 0" stroke="#c86450" stroke-width="1.7" fill="none" stroke-linecap="round"/>' +
+    // 女生发饰
+    (isGirl ? '<circle cx="46.6" cy="24" r="2.6" fill="#ff9ec4"/><circle cx="46.6" cy="24" r="1" fill="#fff"/>' : '') +
     '</svg>';
 }
 
 function aiAvatarSVG(size) {
   const s = size || 34;
-  return '<svg viewBox="0 0 64 64" width="' + s + '" height="' + s + '">' +
-    '<rect width="64" height="64" fill="#eaf4ff"/>' +
-    '<rect x="12" y="20" width="40" height="30" rx="13" fill="#4aa4ef"/>' +
-    '<rect x="20" y="28" width="24" height="14" rx="7" fill="#0f2f52"/>' +
-    '<circle cx="27" cy="35" r="3" fill="#7fe0ff"/><circle cx="37" cy="35" r="3" fill="#7fe0ff"/>' +
-    '<circle cx="32" cy="14" r="4" fill="#6cc6f8"/><rect x="30" y="16" width="4" height="6" rx="2" fill="#6cc6f8"/>' +
-    '<rect x="6" y="29" width="6" height="12" rx="3" fill="#bfe0fb"/>' +
-    '<rect x="52" y="29" width="6" height="12" rx="3" fill="#bfe0fb"/>' +
+  const uid = ++_avUid;
+  return '<svg viewBox="0 0 64 64" width="' + s + '" height="' + s + '" xmlns="http://www.w3.org/2000/svg">' +
+    '<defs>' +
+    '<linearGradient id="ab' + uid + '" x1="0" y1="0" x2="1" y2="1">' +
+    '<stop offset="0" stop-color="#e8f5ff"/><stop offset="1" stop-color="#cbe6ff"/></linearGradient>' +
+    '<linearGradient id="ah' + uid + '" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="#6cc6f8"/><stop offset="1" stop-color="#2b87e0"/></linearGradient>' +
+    '</defs>' +
+    '<rect width="64" height="64" fill="url(#ab' + uid + ')"/>' +
+    // 天线
+    '<rect x="30.6" y="10" width="2.8" height="7" rx="1.4" fill="#8fd0f6"/>' +
+    '<circle cx="32" cy="9.4" r="3.2" fill="#7fe0ff"/>' +
+    '<circle cx="32" cy="9.4" r="1.4" fill="#fff"/>' +
+    // 耳侧灯
+    '<rect x="6.4" y="30" width="6" height="12" rx="3" fill="#9ad4f8"/>' +
+    '<rect x="51.6" y="30" width="6" height="12" rx="3" fill="#9ad4f8"/>' +
+    // 头部
+    '<rect x="12" y="17" width="40" height="32" rx="14" fill="url(#ah' + uid + ')"/>' +
+    '<rect x="12" y="17" width="40" height="32" rx="14" fill="none" stroke="#ffffff" stroke-opacity=".45" stroke-width="1.6"/>' +
+    // 面罩
+    '<rect x="19" y="26" width="26" height="16" rx="8" fill="#0d2b4a"/>' +
+    // 眼睛（发光）
+    '<circle cx="27" cy="34" r="3.1" fill="#7fe0ff"/>' +
+    '<circle cx="37" cy="34" r="3.1" fill="#7fe0ff"/>' +
+    '<circle cx="27.8" cy="33.2" r="1" fill="#fff"/>' +
+    '<circle cx="37.8" cy="33.2" r="1" fill="#fff"/>' +
+    // 微笑
+    '<path d="M28 39.4q4 2.6 8 0" stroke="#7fe0ff" stroke-width="1.8" fill="none" stroke-linecap="round" opacity=".9"/>' +
+    // 感应点
+    '<circle cx="16.6" cy="23.6" r="1.6" fill="#fff" opacity=".85"/>' +
+    '<circle cx="47.4" cy="23.6" r="1.6" fill="#fff" opacity=".85"/>' +
     '</svg>';
 }
 
