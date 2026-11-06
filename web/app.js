@@ -153,12 +153,22 @@ const PALETTE = ['#1a73e8', '#12a05c', '#e8710a', '#8e44ad', '#d93025', '#0b8ea8
 
 /* ---------------- 头像（Q 版 / 机器人） ---------------- */
 
+/* 演示学号 → 头像性别（其余按学号哈希稳定分配） */
+const DEMO_GENDER = {
+  '2025010001': 'boy',   // 张三
+  '2025010002': 'girl',  // 李四
+  '2025010003': 'boy',   // 王五
+  '2025020001': 'girl',  // 赵六
+  '2025030001': 'boy'    // 孙七
+};
+
 function avatarGender(seed) {
   const saved = localStorage.getItem('avatar_gender');
   if (saved === 'boy' || saved === 'girl') return saved;
+  const key = String(seed || '');
+  if (DEMO_GENDER[key]) return DEMO_GENDER[key];
   let h = 0;
-  const s = String(seed || 'zzu');
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 997;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) % 997;
   return h % 2 === 0 ? 'boy' : 'girl';
 }
 
