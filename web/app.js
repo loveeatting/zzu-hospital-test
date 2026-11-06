@@ -86,7 +86,8 @@ function clearSession() {
 function renderUser() {
   if (state.student) {
     userbox.hidden = false;
-    userName.textContent = state.student.name + ' · ' + state.student.student_no;
+    userName.innerHTML = '<span class="topbar-avatar">' + qAvatarSVG(state.student.student_no, 26) +
+      '</span><span class="topbar-name">' + esc(state.student.name) + '</span>';
   } else {
     userbox.hidden = true;
   }
@@ -148,6 +149,58 @@ async function doLogin() {
 /* ---------------- 科室 ---------------- */
 
 const PALETTE = ['#1a73e8', '#12a05c', '#e8710a', '#8e44ad', '#d93025', '#0b8ea8'];
+
+
+/* ---------------- 头像（Q 版 / 机器人） ---------------- */
+
+function avatarGender(seed) {
+  const saved = localStorage.getItem('avatar_gender');
+  if (saved === 'boy' || saved === 'girl') return saved;
+  let h = 0;
+  const s = String(seed || 'zzu');
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 997;
+  return h % 2 === 0 ? 'boy' : 'girl';
+}
+
+function qAvatarSVG(seed, size) {
+  const g = avatarGender(seed);
+  const s = size || 34;
+  if (g === 'girl') {
+    return '<svg viewBox="0 0 64 64" width="' + s + '" height="' + s + '">' +
+      '<rect width="64" height="64" fill="#eaf4ff"/>' +
+      '<circle cx="32" cy="34" r="20" fill="#ffd9c2"/>' +
+      '<path d="M12 34c0-12 9-20 20-20s20 8 20 20c0 4-2 6-4 6 0-9-7-14-16-14S16 31 16 40c-2 0-4-2-4-6z" fill="#3a2b2b"/>' +
+      '<circle cx="25" cy="35" r="2.2" fill="#3a2b2b"/><circle cx="39" cy="35" r="2.2" fill="#3a2b2b"/>' +
+      '<path d="M28 42q4 3.4 8 0" stroke="#d9714f" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+      '<path d="M12 64c2-9 9-13 20-13s18 4 20 13z" fill="#f4a4c0"/>' +
+      '</svg>';
+  }
+  return '<svg viewBox="0 0 64 64" width="' + s + '" height="' + s + '">' +
+    '<rect width="64" height="64" fill="#eaf4ff"/>' +
+    '<circle cx="32" cy="34" r="20" fill="#ffd9c2"/>' +
+    '<path d="M14 30c0-11 8-17 18-17s18 6 18 17c0 2-1 3-2 3-1-8-7-12-16-12s-15 4-16 12c-1 0-2-1-2-3z" fill="#2f2622"/>' +
+    '<circle cx="25" cy="35" r="2.2" fill="#3a2b2b"/><circle cx="39" cy="35" r="2.2" fill="#3a2b2b"/>' +
+    '<path d="M28 42q4 3.4 8 0" stroke="#d9714f" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+    '<path d="M12 64c2-9 9-13 20-13s18 4 20 13z" fill="#4aa4ef"/>' +
+    '</svg>';
+}
+
+function aiAvatarSVG(size) {
+  const s = size || 34;
+  return '<svg viewBox="0 0 64 64" width="' + s + '" height="' + s + '">' +
+    '<rect width="64" height="64" fill="#eaf4ff"/>' +
+    '<rect x="12" y="20" width="40" height="30" rx="13" fill="#4aa4ef"/>' +
+    '<rect x="20" y="28" width="24" height="14" rx="7" fill="#0f2f52"/>' +
+    '<circle cx="27" cy="35" r="3" fill="#7fe0ff"/><circle cx="37" cy="35" r="3" fill="#7fe0ff"/>' +
+    '<circle cx="32" cy="14" r="4" fill="#6cc6f8"/><rect x="30" y="16" width="4" height="6" rx="2" fill="#6cc6f8"/>' +
+    '<rect x="6" y="29" width="6" height="12" rx="3" fill="#bfe0fb"/>' +
+    '<rect x="52" y="29" width="6" height="12" rx="3" fill="#bfe0fb"/>' +
+    '</svg>';
+}
+
+function avatarOf(role, seed, size) {
+  return role === 'user' ? qAvatarSVG(seed, size) : aiAvatarSVG(size);
+}
 
 /* ---------------- 底部三 tab ---------------- */
 
@@ -312,7 +365,7 @@ async function renderProfile() {
     <div class="me-hero">
       <div class="me-photo"></div>
       <div class="me-row">
-        <div class="me-avatar">${esc((st.name || '同').slice(0, 1))}</div>
+        <div class="me-avatar">${qAvatarSVG(st.student_no, 62)}</div>
         <div class="me-info">
           <div class="me-name">${esc(st.name || '同学')}<span class="me-tag">在校生</span></div>
           <div class="me-sub">${esc(st.major || '郑州大学')} · ${esc(st.student_no || '')}</div>
@@ -394,7 +447,8 @@ function renderProfileDetail(kind) {
     info: {
       title: '个人信息',
       rows: [['姓名', st.name || ''], ['学号', st.student_no || ''], ['学院/专业', st.major || '未填写'],
-             ['手机号', st.phone || '未填写'], ['身份', '在校生（学生账号）']]
+             ['手机号', st.phone || '未填写'], ['身份', '在校生（学生账号）']],
+      avatar: true
     },
     card: {
       title: '我的就诊卡',
@@ -419,6 +473,18 @@ function renderProfileDetail(kind) {
       <div class="title">${esc(data.title)}</div>
       <button class="linkbtn" style="background:#eef3fd;color:#1a73e8;" data-action="profile">返回</button>
     </div>
+    ${data.avatar ? `
+    <div class="card">
+      <div class="date-title">我的头像</div>
+      <div class="avatar-picker">
+        <span class="avatar-preview">${qAvatarSVG(st.student_no, 64)}</span>
+        <div class="chips" style="margin:0;">
+          <div class="chip ${avatarGender(st.student_no) === 'boy' ? 'on' : ''}" data-action="avatar-gender" data-g="boy">男生</div>
+          <div class="chip ${avatarGender(st.student_no) === 'girl' ? 'on' : ''}" data-action="avatar-gender" data-g="girl">女生</div>
+        </div>
+      </div>
+      <div class="sub">头像仅用于界面展示，可随时切换。</div>
+    </div>` : ''}
     <div class="card">
       ${data.rows.map(function (r) {
         return '<div class="kv"><span class="kv-k">' + esc(r[0]) + '</span><span class="kv-v">' + esc(r[1]) + '</span></div>';
@@ -935,6 +1001,11 @@ document.addEventListener('click', (ev) => {
     case 'nav': renderNavPage('', 1, '', 'lift'); break;
     case 'profile': renderProfile(); break;
     case 'profile-info': renderProfileDetail('info'); break;
+    case 'avatar-gender':
+      localStorage.setItem('avatar_gender', el.dataset.g);
+      renderUser(    );
+      renderProfileDetail('info');
+      break;
     case 'profile-card': renderProfileDetail('card'); break;
     case 'profile-record': renderProfileDetail('record'); break;
     case 'profile-setting': renderProfileDetail('setting'); break;
@@ -1058,8 +1129,21 @@ function stopHeartbeat() {
 
 function applyDeepLink() {
   const h = (location.hash || '').replace('#', '');
-  if (h === 'profile') { renderProfile(); return true; }
-  if (h === 'my') { renderMy(); return true; }
+  const routes = {
+    home: function () { renderDepartments(); },
+    dept: function () { renderDeptList(); },
+    intro: function () { renderHospitalIntro(); },
+    experts: function () { renderExperts(); },
+    guide: function () { renderGuide(); },
+    access: function () { renderAccess(); },
+    agent: function () { renderAgent(); },
+    health: function () { renderHealth(); },
+    service: function () { renderService(); },
+    reviews: function () { renderAllReviews(); },
+    my: function () { renderMy(); },
+    profile: function () { renderProfile(); }
+  };
+  if (routes[h]) { routes[h](); return true; }
   return false;
 }
 
@@ -1074,7 +1158,8 @@ function boot() {
   }
 }
 
-boot();
+// 延迟启动，确保后续 const 声明已完成初始化
+setTimeout(boot, 0);
 
 /* ---------------- AI 导诊助手（聊天） ---------------- */
 
@@ -1121,7 +1206,9 @@ function paintChat() {
     } else if (m.card && m.card.type === 'schedules' && m.card.doctor_id) {
       extra = `<button class="btn ghost" data-action="doctor" data-id="${m.card.doctor_id}" data-name="">查看全部排班</button>`;
     }
-    return `<div class="bubble ${me ? 'me' : ''}">${esc(m.content).replace(/\n/g, '<br/>')}${extra}</div>`;
+    return `<div class="msg-row ${me ? 'me' : ''}">
+      <span class="${me ? 'q-avatar' : 'ai-avatar'}">${me ? qAvatarSVG(state.student && state.student.student_no, 34) : aiAvatarSVG(34)}</span>
+      <div class="bubble ${me ? 'me' : ''}">${esc(m.content).replace(/\n/g, '<br/>')}${extra}</div></div>`;
   }).join('');
 
   const chips = document.getElementById('chatChips');
@@ -1501,9 +1588,13 @@ function paintServiceThread(scroll) {
     const badge = m.role === 'ai'
       ? '<span class="badge-ai">AI 生成</span>'
       : (m.role === 'staff' ? '<span class="badge-staff">真人回复</span>' : '');
-    return '<div class="bubble ' + (me ? 'me' : '') + '">' +
+    const av = me ? qAvatarSVG(state.student && state.student.student_no, 34)
+      : (m.role === 'staff' ? qAvatarSVG('staff-' + (m.sender || ''), 34) : aiAvatarSVG(34));
+    return '<div class="msg-row ' + (me ? 'me' : '') + '">' +
+      '<span class="' + (me || m.role === 'staff' ? 'q-avatar' : 'ai-avatar') + '">' + av + '</span>' +
+      '<div class="bubble ' + (me ? 'me' : '') + '">' +
       '<div class="who">' + esc(m.sender || '') + (badge ? ' ' + badge : '') + '</div>' +
-      esc(m.content).replace(/\n/g, '<br/>') + '</div>';
+      esc(m.content).replace(/\n/g, '<br/>') + '</div></div>';
   }).join('') : '<div class="bubble">' + esc(SERVICE_GREETING) + '</div>';
 
   const chips = document.getElementById('serviceChips');
