@@ -964,6 +964,70 @@ def hospital_insurance(q: str | None = None):
     return hospital_info.insurance_brief(q or "")
 
 
+@app.get("/api/appoint/board", tags=["预约"])
+def appoint_board(department_id: int | None = None, date: str | None = None):
+    """预约挂号页数据：可选日期 + 全部科室 + 指定科室当天医生号源。"""
+    conn = get_conn()
+    try:
+        rows = conn.execute("SELECT DISTINCT date FROM schedules ORDER BY date").fetchall()
+        all_dates = [r["date"] for r in rows]
+        dates = all_dates[:7]
+        if not date or date not in all_dates:
+            date = dates[0] if dates else datetime.date.today().isoformat()
+
+        depts = [dict(r) for r in conn.execute(
+            "SELECT id, name, location, source FROM departments ORDER BY id"
+        ).fetchall()]
+
+        dept_id = department_id or (depts[0]["id"] if depts else None)
+
+        doctors = []
+        if dept_id:
+            rows2 = conn.execute(
+                """
+                SELECT d.id, d.name, d.title, d.specialty, d.source, d.department_id,
+                       COUNT(sc.id) AS total,
+                       COALESCE(SUM(CASE WHEN sc.remain > 0 THEN 1 ELSE 0 END), 0) AS free
+                FROM doctors AS d
+                LEFT JOIN schedules AS sc ON sc.doctor_id = d.id AND sc.date = ?
+                WHERE d.department_id = ?
+                GROUP BY d.id
+                ORDER BY d.id
+                """,
+                (date, dept_id),
+            ).fetchall()
+            doctors = [dict(r) for r in rows2]
+
+        # 每个日期是否有号
+        counts = {}
+        for r in conn.execute(
+            "SELECT date, COALESCE(SUM(CASE WHEN remain > 0 THEN 1 ELSE 0 END), 0) AS n "
+            "FROM schedules GROUP BY date"
+        ).fetchall():
+            counts[r["date"]] = r["n"]
+    finally:
+        conn.close()
+
+    week = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+    date_meta = []
+    for d in dates:
+        try:
+            dt = datetime.date.fromisoformat(d)
+            label = week[dt.weekday()]
+            mmdd = "%d/%d" % (dt.month, dt.day)
+        except Exception:
+            label, mmdd = "", d
+        date_meta.append({"date": d, "week": label, "label": mmdd, "free": counts.get(d, 0)})
+
+    return {
+        "dates": date_meta,
+        "date": date,
+        "departments": depts,
+        "department_id": dept_id,
+        "doctors": doctors,
+    }
+
+
 @app.get("/api/hospital/nav/areas", tags=["来院指引"])
 def hospital_nav_areas():
     return {"areas": hospital_info.nav_areas(), "landmarks": hospital_info.NAV_LANDMARKS}

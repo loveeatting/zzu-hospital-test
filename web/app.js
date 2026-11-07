@@ -151,6 +151,62 @@ async function doLogin() {
 const PALETTE = ['#1a73e8', '#12a05c', '#e8710a', '#8e44ad', '#d93025', '#0b8ea8'];
 
 
+
+
+/* 医生头像（中性，白大褂 + 听诊器） */
+function doctorAvatarSVG(size) {
+  const s = size || 52;
+  return '<svg viewBox="0 0 64 64" width="' + s + '" height="' + s + '" xmlns="http://www.w3.org/2000/svg">' +
+    '<rect width="64" height="64" rx="32" fill="#e8f3ff"/>' +
+    '<path d="M10 62c1-10 8-16 22-16s21 6 22 16z" fill="#ffffff"/>' +
+    '<path d="M32 46l-4-3 4-3 4 3z" fill="#dbe9f7"/>' +
+    '<circle cx="32" cy="27" r="12.6" fill="#ffddc8"/>' +
+    '<path d="M19.6 24c0-7.6 5.4-12 12.4-12s12.4 4.4 12.4 12c0 1.4-.6 2.2-1.4 2.4-1.2-5-4-8-9-8.6-5 .6-8 3.6-9.6 8.6-1-.2-1.8-1-1.8-2.4z" fill="#3b3034"/>' +
+    '<circle cx="27.4" cy="28" r="1.7" fill="#2b2b33"/><circle cx="36.6" cy="28" r="1.7" fill="#2b2b33"/>' +
+    '<path d="M29 33.4q3 2.4 6 0" stroke="#c96450" stroke-width="1.21" fill="none" stroke-linecap="round"/>' +
+    '<path d="M46 44c0 6-4 10-9 10" stroke="#2b87e0" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+    '<circle cx="49" cy="55" r="3.4" fill="none" stroke="#2b87e0" stroke-width="2"/>' +
+    '</svg>';
+}
+
+/* ---------------- 科室图标 ---------------- */
+
+const DEPT_ICONS = {
+  '内科': '<path d="M20.5 5.6a5 5 0 0 0-7.1 0L12 7l-1.4-1.4a5 5 0 1 0-7.1 7.1L12 21l8.5-8.3a5 5 0 0 0 0-7.1z"/><path d="M6.5 12h3l1.3-2.2 1.6 4 1.3-2.2h3"/>',
+  '外科': '<path d="M4.5 19.5l6-6"/><path d="M14.5 4.5l5 5-2.4 2.4-5-5z"/><circle cx="6" cy="18" r="2.2"/><path d="M15.5 14.5l4 4"/>',
+  '口腔科': '<path d="M12 3.6c-3.4 0-5.6 2.2-5.6 5.4 0 2 .7 3.3 1.1 5 .4 1.6.3 6.4 1.9 6.4 1.5 0 1.2-3.6 2.6-3.6s1.1 3.6 2.6 3.6c1.6 0 1.5-4.8 1.9-6.4.4-1.7 1.1-3 1.1-5 0-3.2-2.2-5.4-5.6-5.4z"/>',
+  '皮肤科': '<path d="M12 3.2c3.4 3.6 6.2 7 6.2 10.4A6.2 6.2 0 0 1 12 19.8a6.2 6.2 0 0 1-6.2-6.2C5.8 10.2 8.6 6.8 12 3.2z"/>',
+  '眼科': '<path d="M2.4 12S6 6.4 12 6.4 21.6 12 21.6 12 18 17.6 12 17.6 2.4 12 2.4 12z"/><circle cx="12" cy="12" r="3"/>',
+  '耳鼻咽喉科': '<path d="M8 8.4a4.6 4.6 0 1 1 8.2 2.8c-1 1.4-2.6 1.8-2.6 3.6a2.4 2.4 0 0 1-4.8 0"/><path d="M17.6 15.4c1 1 1.4 2 1.2 3.2"/>',
+  '康复理疗科（疼痛科）': '<circle cx="12" cy="5.2" r="2.2"/><path d="M12 8v5.2M12 13.2l-3 4M12 13.2l3 4"/><circle cx="6.4" cy="20" r="2"/><circle cx="17.6" cy="20" r="2"/>',
+  '成人预防接种门诊': '<path d="M12 3l7 3v5.4c0 4.4-3 8-7 9.4-4-1.4-7-5-7-9.4V6z"/><path d="M12 8.6v5M9.6 11.1h4.8"/>',
+  '体检科': '<rect x="5.4" y="4" width="13.2" height="16.4" rx="2.6"/><path d="M9 4V2.8h6V4"/><path d="M9 12l1.8 1.8L14.6 10"/>',
+  '超声科': '<path d="M3 12c2.4-3.4 4.8-3.4 7.2 0s4.8 3.4 7.2 0"/><path d="M3 16.6c2.4-3.4 4.8-3.4 7.2 0s4.8 3.4 7.2 0"/><path d="M3 7.4c2.4-3.4 4.8-3.4 7.2 0s4.8 3.4 7.2 0"/>',
+  '检验科': '<path d="M9.4 3.4h5.2M10.6 3.4v6.2L6.6 17a3 3 0 0 0 2.6 4.4h5.6a3 3 0 0 0 2.6-4.4l-4-7.4V3.4"/><path d="M8 14.6h8"/>',
+  '放射科': '<circle cx="12" cy="12" r="2.2"/><path d="M12 3.2v3.4M12 17.4v3.4M3.2 12h3.4M17.4 12h3.4M6 6l2.4 2.4M15.6 15.6L18 18M18 6l-2.4 2.4M8.4 15.6L6 18"/>',
+  '妇科': '<circle cx="12" cy="8.4" r="5"/><path d="M12 13.4V21M9 18h6"/>',
+  '中医科': '<path d="M20 4c0 8-4 12-9 12a4 4 0 0 1 0-8c3.4 0 6-2 9-4z"/><path d="M4 20c2-5 5-8 9-10"/>',
+  'default': '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8.4v7.2M8.4 12h7.2"/>'
+};
+
+function deptIconKey(name) {
+  const n = String(name || '').replace(/（疼痛科）/, '');
+  if (DEPT_ICONS[name]) return name;
+  if (DEPT_ICONS[n]) return n;
+  const keys = Object.keys(DEPT_ICONS);
+  for (let i = 0; i < keys.length; i++) {
+    if (keys[i] !== 'default' && (n.indexOf(keys[i]) >= 0 || keys[i].indexOf(n) >= 0)) return keys[i];
+  }
+  return 'default';
+}
+
+function deptIconSVG(name, size, color) {
+  const key = deptIconKey(name);
+  return '<svg viewBox="0 0 24 24" width="' + (size || 26) + '" height="' + (size || 26) + '" fill="none" ' +
+    'stroke="' + (color || '#2b87e0') + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
+    DEPT_ICONS[key] + '</svg>';
+}
+
 /* ---------------- 头像（Q 版 / 机器人） ---------------- */
 
 /* 演示学号 → 头像性别（其余按学号哈希稳定分配） */
@@ -275,13 +331,10 @@ const HOME_BLUE = '#1a73e8';
 const HOME_ORANGE = '#f4703a';
 
 const HOME_MODULES = [
-  { action: 'agent', icon: 'spark', title: 'AI 导诊', desc: '说一句症状<br/>帮你选科室', badge: '主入口' },
   { action: 'appoint', icon: 'cal', title: '预约挂号', desc: '快速预约<br/>省时省心' },
-  { action: 'intro', icon: 'hosp', title: '医院简介', desc: '二级综合<br/>一院四区' },
   { action: 'dept-list', icon: 'dept', title: '科室介绍', desc: '14 个科室<br/>都能看什么' },
-  { action: 'experts', icon: 'doc', title: '医生介绍', desc: '了解医生<br/>专业擅长' },
+  { action: 'intro', icon: 'hosp', title: '医院简介', desc: '二级综合<br/>一院四区' },
   { action: 'guide', icon: 'guide', title: '就医指南', desc: '就诊须知<br/>轻松就医' },
-  { action: 'access', icon: 'route', title: '来院指引', desc: '怎么走<br/>几楼哪个门' },
   { action: 'health', icon: 'book', title: '健康科普', desc: '科学健康<br/>从这里开始' },
   { action: 'service', icon: 'svc', title: '服务咨询', desc: '医保值班<br/>人工客服' }
 ];
@@ -361,9 +414,9 @@ async function renderDepartments() {
           <path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/>
         </svg>
       </span>
-      <span class="route-name">就医路线</span>
+      <span class="route-name">来院导航</span>
       <span class="route-div"></span>
-      <span class="route-sub">郑州大学校医院</span>
+      <span class="route-sub">郑州大学校医院 · 就医路线</span>
       <span class="route-chev">›</span>
     </div>
 
@@ -557,43 +610,121 @@ function renderProfileDetail(kind) {
 
 /* ---------------- 科室列表 / 预约挂号 ---------------- */
 
-async function renderDeptList(appointMode) {
+/* ---------------- 科室介绍（图二样式） ---------------- */
+
+async function renderDeptList() {
   show('<div class="loading">加载中…</div>');
   try {
     const list = await api('/api/departments');
-    const cards = list.map((d, i) => `
-      <div class="card tap dept" data-action="dept" data-id="${d.id}" data-name="${esc(d.name)}">
-        <div class="avatar" style="background:${PALETTE[i % PALETTE.length]}">${esc(d.name.slice(0, 1))}</div>
-        <div class="dept-body">
-          <div class="title">${esc(d.name)}<span class="tag ${d.source === 'real' ? 'green' : 'gray'}" style="font-size:11px;vertical-align:middle;margin-left:6px;">${d.source === 'real' ? '真实' : '模拟'}</span></div>
-          <div class="sub">${esc(d.location || '')}
-            <button class="linkbtn" style="background:#f0f6ff;color:#1a73e8;font-size:11px;padding:2px 8px;margin-left:6px;"
-              data-action="nav-dept" data-name="${esc(d.name)}">怎么走</button>
-          </div>
-        </div>
-        <div class="arrow">›</div>
-      </div>`).join('');
-
-    const chips = appointMode
-      ? '<div class="chips"><div class="chip" data-action="my">我的预约</div><div class="chip" data-action="guide">就诊流程</div></div>'
-      : '';
+    const rows = list.map(function (d) {
+      return '<div class="dept-row tap" data-action="dept" data-id="' + d.id + '" data-name="' + esc(d.name) + '">' +
+        '<div class="dept-ico">' + deptIconSVG(d.name, 26) + '</div>' +
+        '<div class="dept-main">' +
+          '<div class="dept-head"><span class="dept-name">' + esc(d.name) + '</span>' +
+          '<span class="tag ' + (d.source === 'real' ? 'green' : 'gray') + '">' + (d.source === 'real' ? '真实' : '模拟') + '</span></div>' +
+          '<div class="dept-meta">' + esc(d.location || '门诊楼') +
+            '<span class="dept-go" data-action="nav-dept" data-name="' + esc(d.name) + '">📍 怎么去</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="arrow">›</div>' +
+      '</div>';
+    }).join('');
 
     show(`
-      <div class="row" style="margin-bottom:10px;">
-        <div class="title">${appointMode ? '预约挂号' : '科室介绍'}</div>
-        <button class="linkbtn" style="background:#eef3fd;color:#1a73e8;" data-action="depts">返回首页</button>
+      <div class="page-head">
+        <div class="page-head-t">科室介绍</div>
+        <button class="linkbtn" data-action="depts">返回首页</button>
       </div>
-      ${chips}
-      ${cards}
-      <div class="notice">先选科室，再选医生与时段；预约成功后可在「我的预约」中查看或取消。</div>
+      <div class="dept-list">${rows}</div>
+      <div class="tip-bar">先进科室，再选医生与时段，预约成功后可在「我的预约」中查看或取消。</div>
     `);
   } catch (e) {
-    show(`<div class="card"><div class="err">${esc(e.message)}</div>
-      <button class="btn" data-action="depts">返回首页</button></div>`);
+    show('<div class="card"><div class="err">' + esc(e.message) + '</div><button class="btn" data-action="depts">返回首页</button></div>');
   }
 }
 
-/* ---------------- 医院简介 ---------------- */
+/* ---------------- 预约挂号（图一样式） ---------------- */
+
+async function renderAppoint(deptId, date) {
+  show('<div class="loading">加载中…</div>');
+  try {
+    let q = [];
+    if (deptId) q.push('department_id=' + deptId);
+    if (date) q.push('date=' + date);
+    const d = await api('/api/appoint/board' + (q.length ? '?' + q.join('&') : ''));
+    state.appoint = { deptId: d.department_id, date: d.date };
+
+    const dates = (d.dates || []).slice(0, 5).map(function (x) {
+      const on = x.date === d.date;
+      return '<div class="date-chip ' + (on ? 'on' : '') + '" data-action="appoint-date" data-date="' + esc(x.date) +
+        '" data-dept="' + d.department_id + '">' +
+        '<div class="dc-week">' + esc(x.week) + '</div>' +
+        '<div class="dc-day">' + esc(x.label) + '</div>' +
+        '<div class="dc-tag">' + (on ? '今天' : (x.free > 0 ? '余 ' + x.free : '无号')) + '</div></div>';
+    }).join('');
+
+    const depts = (d.departments || []).map(function (dp) {
+      const on = dp.id === d.department_id;
+      return '<div class="dept-cell ' + (on ? 'on' : '') + '" data-action="appoint-dept" data-id="' + dp.id +
+        '" data-date="' + esc(d.date) + '">' +
+        '<span class="dept-cell-ico">' + deptIconSVG(dp.name, 24) + '</span>' +
+        '<span class="dept-cell-name">' + esc(dp.name.replace(/（疼痛科）/, '')) + '</span></div>';
+    }).join('') +
+      '<div class="dept-cell" data-action="dept-list"><span class="dept-cell-ico">' +
+      deptIconSVG('default', 24) + '</span><span class="dept-cell-name">全部科室</span></div>';
+
+    const docs = (d.doctors || []).length ? d.doctors.map(function (doc) {
+      const free = doc.free > 0;
+      return '<div class="doc-row ' + (free ? 'tap' : 'off') + '" ' +
+        (free ? 'data-action="appoint-doc" data-id="' + doc.id + '" data-name="' + esc(doc.name) + '"' : '') + '>' +
+        '<span class="doc-av">' + doctorAvatarSVG(52) + '</span>' +
+        '<div class="doc-main">' +
+          '<div class="doc-head"><span class="doc-name">' + esc(doc.name) + '</span>' +
+          (doc.title ? '<span class="tag">' + esc(doc.title) + '</span>' : '') + '</div>' +
+          '<div class="doc-sub">' + esc((d.departments.filter(function (x) { return x.id === doc.department_id; })[0] || {}).name || '') +
+            ' · 郑州大学校医院</div>' +
+          '<div class="doc-spec">擅长：' + esc(doc.specialty || '常见病诊治') + '</div>' +
+        '</div>' +
+        '<span class="doc-flag ' + (free ? 'ok' : 'no') + '">' + (free ? '有号' : '约满') + '</span>' +
+        '</div>';
+    }).join('') : '<div class="empty">该科室当天暂无排班</div>';
+
+    const firstFree = (d.doctors || []).filter(function (x) { return x.free > 0; })[0];
+
+    show(`
+      <div class="appoint-hero">
+        <div class="appoint-hero-t">预约挂号</div>
+        <div class="appoint-hero-s">线上预约 · 快速就医</div>
+      </div>
+
+      <div class="card">
+        <div class="date-title">就诊日期</div>
+        <div class="date-row">${dates}<div class="date-more" data-action="appoint-more">更多日期 ›</div></div>
+      </div>
+
+      <div class="card">
+        <div class="date-title">选择科室 <span class="head-link" data-action="dept-list">科室简介 ›</span></div>
+        <div class="dept-grid">${depts}</div>
+      </div>
+
+      <div class="card">
+        <div class="date-title">选择医生</div>
+        ${docs}
+      </div>
+
+      <div class="appoint-foot">
+        <div class="foot-tip">ⓘ 温馨提示<br/><span>请按实际情况选择科室与医生，预约成功后请按时就诊</span></div>
+        <button class="btn foot-btn" data-action="${firstFree ? 'appoint-doc' : 'dept-list'}"
+          data-id="${firstFree ? firstFree.id : ''}" data-name="${firstFree ? esc(firstFree.name) : ''}">
+          立即预约 →</button>
+      </div>
+      ${tabBar('home')}
+    `);
+  } catch (e) {
+    show('<div class="card"><div class="err">' + esc(e.message) + '</div><button class="btn" data-action="depts">返回首页</button></div>');
+  }
+}
+
 
 async function renderHospitalIntro() {
   show('<div class="loading">加载中…</div>');
@@ -787,6 +918,19 @@ function dateLabel(iso) {
   else if (diff === 1) prefix = '明天 · ';
   else if (diff === 2) prefix = '后天 · ';
   return prefix + (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + WEEK[d.getDay()];
+}
+
+
+/* 预约页点医生 → 打开该医生排班 */
+async function renderDocumentsFallback(id, name) {
+  try {
+    const list = await api('/api/doctors');
+    const hit = (list || []).filter(function (x) { return String(x.id) === String(id); })[0];
+    if (hit) { renderSchedules(hit); return; }
+    toast('未找到该医生，请重试');
+  } catch (e) {
+    toast(e.message);
+  }
 }
 
 async function renderSchedules(doctor) {
@@ -1054,7 +1198,11 @@ document.addEventListener('click', (ev) => {
       break;
     case 'depts': renderDepartments(); break;
     case 'dept-list': renderDeptList(false); break;
-    case 'appoint': renderDeptList(true); break;
+    case 'appoint': renderAppoint(); break;
+    case 'appoint-date': renderAppoint(Number(el.dataset.dept) || 0, el.dataset.date); break;
+    case 'appoint-dept': renderAppoint(Number(el.dataset.id) || 0, el.dataset.date); break;
+    case 'appoint-doc': renderDocumentsFallback(el.dataset.id, el.dataset.name); break;
+    case 'appoint-more': renderAppoint((state.appoint && state.appoint.deptId) || 0, ''); break;
     case 'intro': renderHospitalIntro(); break;
     case 'experts': renderExperts(); break;
     case 'guide': renderGuide(); break;
@@ -1202,6 +1350,7 @@ function applyDeepLink() {
   const routes = {
     home: function () { renderDepartments(); },
     dept: function () { renderDeptList(); },
+    appoint: function () { renderAppoint(); },
     intro: function () { renderHospitalIntro(); },
     experts: function () { renderExperts(); },
     guide: function () { renderGuide(); },
