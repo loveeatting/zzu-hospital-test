@@ -687,27 +687,21 @@ body { background: #eef4fb; }
 }
 .me-photo {
   position: absolute; inset: 0;
-  background: linear-gradient(160deg, #eaf4ff 0%, #f6fbff 55%, #ffffff 100%);
+  background: url('img/hospital.jpg') center 32% / cover no-repeat;
   overflow: hidden;
 }
+/* 左侧渐白，保证头像与姓名可读；右侧保留照片 */
 .me-photo::before {
   content: "";
-  position: absolute; right: 26px; top: 40%;
-  width: 26px; height: 86px;
-  transform: translateY(-50%);
-  background: linear-gradient(180deg, #ef5350, #d32f2f);
-  border-radius: 7px;
-  opacity: .85;
+  position: absolute; inset: 0;
+  background: linear-gradient(100deg,
+    rgba(255, 255, 255, 0.96) 0%,
+    rgba(255, 255, 255, 0.88) 38%,
+    rgba(255, 255, 255, 0.52) 66%,
+    rgba(255, 255, 255, 0.18) 100%);
 }
-.me-photo::after {
-  content: "";
-  position: absolute; right: -4px; top: 40%;
-  width: 86px; height: 26px;
-  transform: translateY(-50%);
-  background: linear-gradient(180deg, #ef5350, #d32f2f);
-  border-radius: 7px;
-  opacity: .85;
-}
+.me-photo::after { content: none; }
+
 .me-row { position: relative; display: flex; align-items: center; gap: 12px; padding: 34px 18px 0; }
 .me-avatar {
   width: 62px; height: 62px; border-radius: 50%;
