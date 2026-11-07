@@ -179,62 +179,38 @@ function _avBg(uid, c1, c2) {
   return 'url(#bg' + uid + ')' ;
 }
 
-function qAvatarSVG(seed, size) {
-  const g = avatarGender(seed);
-  const s = size || 34;
-  const uid = ++_avUid;
-  const isGirl = g === 'girl';
-  const bg1 = isGirl ? '#ffe6f1' : '#e3f1ff';
-  const bg2 = isGirl ? '#ffd2e5' : '#c9e4ff';
-  const hair = isGirl ? '#4a3138' : '#33282a';
-  const skin = '#ffddc8';
-  const skinShade = '#f6c9ae';
-  const cloth = isGirl ? '#f27fa5' : '#3f95e8';
-  const cloth2 = isGirl ? '#e26a93' : '#2b7fd1';
+/* 可选头像（AI 生成，男生默认 5，女生默认 2） */
+const AVATAR_IDS = [1, 2, 3, 4, 5, 6];
+const GIRL_DEFAULT_AV = 2;
+const BOY_DEFAULT_AV = 5;
+const AVATAR_WORDS = {
+  1: '女生·双马尾', 2: '女生·短发', 3: '女生·长卷发',
+  4: '男生·眼镜', 5: '男生·连帽衫', 6: '男生·鸭舌帽'
+};
 
-  return '<svg viewBox="0 0 64 64" width="' + s + '" height="' + s + '" xmlns="http://www.w3.org/2000/svg">' +
-    '<defs>' +
-    '<linearGradient id="bg' + uid + '" x1="0" y1="0" x2="1" y2="1">' +
-    '<stop offset="0" stop-color="' + bg1 + '"/><stop offset="1" stop-color="' + bg2 + '"/></linearGradient>' +
-    '<linearGradient id="cl' + uid + '" x1="0" y1="0" x2="0" y2="1">' +
-    '<stop offset="0" stop-color="' + cloth + '"/><stop offset="1" stop-color="' + cloth2 + '"/></linearGradient>' +
-    '</defs>' +
-    '<rect width="64" height="64" fill="url(#bg' + uid + ')"/>' +
-    // 肩膀与衣服
-    '<path d="M6 64c1-9 9-15 26-15s25 6 26 15z" fill="url(#cl' + uid + ')"/>' +
-    // 领口
-    '<path d="M27 50l5 6 5-6" fill="none" stroke="#ffffff" stroke-width="2" stroke-linejoin="round" opacity=".85"/>' +
-    // 脖子
-    '<rect x="28" y="42" width="8" height="9" rx="4" fill="' + skinShade + '"/>' +
-    // 头发（后层，女生长发）
-    (isGirl
-      ? '<path d="M14 34c0-14 8-22 18-22s18 8 18 22c0 8-2 14-4 18l-6-3 2-14H22l2 14-6 3c-2-4-4-10-4-18z" fill="' + hair + '"/>'
-      : '') +
-    // 耳朵
-    '<circle cx="18.6" cy="31" r="2.6" fill="' + skinShade + '"/>' +
-    '<circle cx="45.4" cy="31" r="2.6" fill="' + skinShade + '"/>' +
-    // 脸
-    '<ellipse cx="32" cy="30" rx="13.4" ry="14.2" fill="' + skin + '"/>' +
-    // 刘海/短发
-    (isGirl
-      ? '<path d="M18.6 27c0-9 6-14 13.4-14s13.4 5 13.4 14c-2-5-5-7-8-7-2 3-6 5-11 5-3 0-5 0-7.8 2z" fill="' + hair + '"/>'
-      : '<path d="M18.4 27c0-9.4 6-15 13.6-15s13.6 5.6 13.6 15c0 1.4-.6 2.2-1.4 2.4-.6-5-3.4-8-6.2-8.4-2.6 2.4-7 3.6-11.6 3.6-2.6 0-4.6.8-6 2.4-.8-.2-2-1-2-2z" fill="' + hair + '"/>') +
-    // 眉毛
-    '<path d="M23.6 25.6q2.6-1.4 5 .2" stroke="' + hair + '" stroke-width="1.5" fill="none" stroke-linecap="round"/>' +
-    '<path d="M35.4 25.8q2.4-1.6 5-.2" stroke="' + hair + '" stroke-width="1.5" fill="none" stroke-linecap="round"/>' +
-    // 眼睛
-    '<ellipse cx="26.6" cy="31.4" rx="2" ry="2.6" fill="#2b2b33"/>' +
-    '<ellipse cx="37.4" cy="31.4" rx="2" ry="2.6" fill="#2b2b33"/>' +
-    '<circle cx="27.2" cy="30.6" r=".7" fill="#fff"/>' +
-    '<circle cx="38" cy="30.6" r=".7" fill="#fff"/>' +
-    // 腮红
-    '<ellipse cx="22.6" cy="36.4" rx="2.6" ry="1.5" fill="#ff9d9d" opacity=".45"/>' +
-    '<ellipse cx="41.4" cy="36.4" rx="2.6" ry="1.5" fill="#ff9d9d" opacity=".45"/>' +
-    // 嘴
-    '<path d="M29.4 38.4q2.6 2.6 5.2 0" stroke="#c86450" stroke-width="1.7" fill="none" stroke-linecap="round"/>' +
-    // 女生发饰
-    (isGirl ? '<circle cx="46.6" cy="24" r="2.6" fill="#ff9ec4"/><circle cx="46.6" cy="24" r="1" fill="#fff"/>' : '') +
-    '</svg>';
+function defaultAvatarId(seed) {
+  return avatarGender(seed) === 'girl' ? GIRL_DEFAULT_AV : BOY_DEFAULT_AV;
+}
+
+function avatarIdOf(seed) {
+  const key = String(seed || '');
+  if (key.indexOf('staff-') === 0) {
+    const sv = parseInt(localStorage.getItem('avatar_' + key) || '', 10);
+    return AVATAR_IDS.indexOf(sv) >= 0 ? sv : GIRL_DEFAULT_AV;
+  }
+  const saved = parseInt(localStorage.getItem('avatar_' + key) || '', 10);
+  if (AVATAR_IDS.indexOf(saved) >= 0) return saved;
+  return defaultAvatarId(seed);
+}
+
+function avatarImgTag(seed, size) {
+  const s = size || 34;
+  return '<img class="av-img" src="avatars/av' + avatarIdOf(seed) + '.png" width="' + s +
+    '" height="' + s + '" alt="" draggable="false">';
+}
+
+function qAvatarSVG(seed, size) {
+  return avatarImgTag(seed, size);
 }
 
 function aiAvatarSVG(size) {
@@ -553,12 +529,22 @@ function renderProfileDetail(kind) {
       <div class="date-title">我的头像</div>
       <div class="avatar-picker">
         <span class="avatar-preview">${qAvatarSVG(st.student_no, 64)}</span>
-        <div class="chips" style="margin:0;">
-          <div class="chip ${avatarGender(st.student_no) === 'boy' ? 'on' : ''}" data-action="avatar-gender" data-g="boy">男生</div>
-          <div class="chip ${avatarGender(st.student_no) === 'girl' ? 'on' : ''}" data-action="avatar-gender" data-g="girl">女生</div>
+        <div class="sub" style="margin:0;">
+          当前：${AVATAR_WORDS[avatarIdOf(st.student_no)] || ''}
+          ${localStorage.getItem('avatar_' + st.student_no) ? '' : '（默认）'}
         </div>
       </div>
-      <div class="sub">头像仅用于界面展示，可随时切换。</div>
+      <div class="av-grid">
+        ${AVATAR_IDS.map(function (id) {
+          const on = avatarIdOf(st.student_no) === id;
+          return '<button class="av-opt ' + (on ? 'on' : '') + '" data-action="avatar-pick" data-id="' + id + '">' +
+            '<img src="avatars/av' + id + '.png" alt="" draggable="false"></button>';
+        }).join('')}
+      </div>
+      <div class="av-foot">
+        <span class="sub">男生默认第 5 张，女生默认第 2 张</span>
+        <button class="linkbtn" data-action="avatar-default">恢复默认</button>
+      </div>
     </div>` : ''}
     <div class="card">
       ${data.rows.map(function (r) {
@@ -1076,11 +1062,20 @@ document.addEventListener('click', (ev) => {
     case 'nav': renderNavPage('', 1, '', 'lift'); break;
     case 'profile': renderProfile(); break;
     case 'profile-info': renderProfileDetail('info'); break;
-    case 'avatar-gender':
-      localStorage.setItem('avatar_gender', el.dataset.g);
-      renderUser(    );
+    case 'avatar-pick': {
+      const sid = (state.student && state.student.student_no) || '';
+      localStorage.setItem('avatar_' + sid, el.dataset.id);
+      renderUser();
       renderProfileDetail('info');
       break;
+    }
+    case 'avatar-default': {
+      const sid2 = (state.student && state.student.student_no) || '';
+      localStorage.removeItem('avatar_' + sid2);
+      renderUser();
+      renderProfileDetail('info');
+      break;
+    }
     case 'profile-card': renderProfileDetail('card'); break;
     case 'profile-record': renderProfileDetail('record'); break;
     case 'profile-setting': renderProfileDetail('setting'); break;
@@ -1216,7 +1211,8 @@ function applyDeepLink() {
     service: function () { renderService(); },
     reviews: function () { renderAllReviews(); },
     my: function () { renderMy(); },
-    profile: function () { renderProfile(); }
+    profile: function () { renderProfile(); },
+    'me-info': function () { renderProfileDetail('info'); }
   };
   if (routes[h]) { routes[h](); return true; }
   return false;
