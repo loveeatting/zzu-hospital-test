@@ -169,6 +169,31 @@ function doctorAvatarSVG(size) {
     '</svg>';
 }
 
+
+/* ---------------- 医生头像（男/女） ---------------- */
+
+const DOC_GENDER = {
+  '崔超巍': 'm', '鲁照亮': 'm', '白慧英': 'f', '李雪峰': 'm', '张文霞': 'f',
+  '李立': 'm', '郭淑香': 'f', '赵铮': 'm', '冯娜': 'f',
+  '王海燕': 'f', '李振宇': 'm', '陈立新': 'm', '张丽华': 'f', '刘建国': 'm',
+  '孙志远': 'm', '周明': 'm', '吴晓丹': 'f'
+};
+
+function doctorGender(name) {
+  const key = String(name || '').trim();
+  if (DOC_GENDER[key]) return DOC_GENDER[key];
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) % 997;
+  return h % 2 === 0 ? 'm' : 'f';
+}
+
+function doctorAvatarSVG(name, size) {
+  const s = size || 52;
+  const file = doctorGender(name) === 'f' ? 'doc_f' : 'doc_m';
+  return '<img class="av-img" src="avatars/' + file + '.png" width="' + s + '" height="' + s +
+    '" alt="" draggable="false">';
+}
+
 /* ---------------- 科室图标 ---------------- */
 
 const DEPT_ICONS = {
@@ -668,7 +693,7 @@ async function renderAppoint(deptId, date) {
       return '<div class="dept-cell ' + (on ? 'on' : '') + '" data-action="appoint-dept" data-id="' + dp.id +
         '" data-date="' + esc(d.date) + '">' +
         '<span class="dept-cell-ico">' + deptIconSVG(dp.name, 24) + '</span>' +
-        '<span class="dept-cell-name">' + esc(dp.name.replace(/（疼痛科）/, '')) + '</span></div>';
+        '<span class="dept-cell-name">' + esc(dp.name.replace(/（疼痛科）/, '').replace('成人预防接种门诊', '接种门诊').replace('康复理疗科', '康复理疗')) + '</span></div>';
     }).join('') +
       '<div class="dept-cell" data-action="dept-list"><span class="dept-cell-ico">' +
       deptIconSVG('default', 24) + '</span><span class="dept-cell-name">全部科室</span></div>';
@@ -677,7 +702,7 @@ async function renderAppoint(deptId, date) {
       const free = doc.free > 0;
       return '<div class="doc-row ' + (free ? 'tap' : 'off') + '" ' +
         (free ? 'data-action="appoint-doc" data-id="' + doc.id + '" data-name="' + esc(doc.name) + '"' : '') + '>' +
-        '<span class="doc-av">' + doctorAvatarSVG(52) + '</span>' +
+        '<span class="doc-av">' + doctorAvatarSVG(doc.name, 52) + '</span>' +
         '<div class="doc-main">' +
           '<div class="doc-head"><span class="doc-name">' + esc(doc.name) + '</span>' +
           (doc.title ? '<span class="tag">' + esc(doc.title) + '</span>' : '') + '</div>' +
