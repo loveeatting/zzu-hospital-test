@@ -527,7 +527,7 @@ body { background: #eef4fb; }
 
 .home-hero {
   position: relative;
-  height: 176px;
+  height: 196px;
   margin: -14px -18px 0;
   border-radius: 0 0 26px 26px;
   overflow: hidden;
@@ -535,23 +535,37 @@ body { background: #eef4fb; }
 }
 .hero-photo {
   position: absolute; inset: 0;
-  background:
-    repeating-linear-gradient(45deg, rgba(255,255,255,.5) 0 12px, rgba(255,255,255,.22) 12px 24px),
-    linear-gradient(160deg, #bcdcf7, #e8f3fd);
+  background: linear-gradient(160deg, #eaf4ff 0%, #f6fbff 55%, #ffffff 100%);
+  overflow: hidden;
 }
+/* 红十字：竖条 */
+.hero-photo::before {
+  content: "";
+  position: absolute; left: 50%; top: 33%;
+  width: 28px; height: 94px;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(180deg, #ef5350, #d32f2f);
+  border-radius: 7px;
+  box-shadow: 0 6px 16px rgba(211, 47, 47, .2);
+  opacity: .9;
+}
+/* 红十字：横条 */
 .hero-photo::after {
-  content: "实景照位置";
-  position: absolute; right: 14px; bottom: 12px;
-  font-size: 10.5px; color: #7ba7cc;
-  background: rgba(255,255,255,.72); border-radius: 8px; padding: 2px 8px;
+  content: "";
+  position: absolute; left: 50%; top: 33%;
+  width: 94px; height: 28px;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(180deg, #ef5350, #d32f2f);
+  border-radius: 7px;
+  opacity: .9;
 }
 .slogan {
-  position: absolute; left: 18px; bottom: 44px;
+  position: absolute; left: 18px; bottom: 40px;
   font-size: 23px; font-weight: 800; letter-spacing: 1.5px; color: #17304d;
   text-shadow: 0 1px 0 rgba(255,255,255,.85);
 }
 .slogan-bar {
-  position: absolute; left: 20px; bottom: 30px;
+  position: absolute; left: 20px; bottom: 26px;
   width: 180px; height: 8px; border-radius: 6px;
   background: linear-gradient(90deg, #7fd3f7, #b7e6ff 60%, rgba(183,230,255,0));
   transform: skewX(-14deg);
@@ -680,9 +694,26 @@ body { background: #eef4fb; }
 }
 .me-photo {
   position: absolute; inset: 0;
-  background:
-    repeating-linear-gradient(45deg, rgba(255,255,255,.5) 0 12px, rgba(255,255,255,.22) 12px 24px),
-    linear-gradient(160deg, #cfe6fb, #eef6fe);
+  background: linear-gradient(160deg, #eaf4ff 0%, #f6fbff 55%, #ffffff 100%);
+  overflow: hidden;
+}
+.me-photo::before {
+  content: "";
+  position: absolute; right: 26px; top: 40%;
+  width: 26px; height: 86px;
+  transform: translateY(-50%);
+  background: linear-gradient(180deg, #ef5350, #d32f2f);
+  border-radius: 7px;
+  opacity: .85;
+}
+.me-photo::after {
+  content: "";
+  position: absolute; right: -4px; top: 40%;
+  width: 86px; height: 26px;
+  transform: translateY(-50%);
+  background: linear-gradient(180deg, #ef5350, #d32f2f);
+  border-radius: 7px;
+  opacity: .85;
 }
 .me-row { position: relative; display: flex; align-items: center; gap: 12px; padding: 34px 18px 0; }
 .me-avatar {
